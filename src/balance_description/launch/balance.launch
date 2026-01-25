@@ -1,0 +1,17 @@
+<launch>
+  <!-- 1. 加载 URDF 到参数服务器 -->
+  <param name="robot_description" command="$(find xacro)/xacro '$(find balance_description)/urdf/balance.urdf.xacro'"/>
+
+  <!-- 2. 启动 Gazebo 并生成机器人 -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch"/>
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+          args="-urdf -model balance_car -param robot_description -x 0 -y 0 -z 0.2 -P 0.1" />
+
+  <rosparam file="$(find balance_description)/config/balance.yaml" command="load"/>
+  
+  <!-- 4. 启动控制器管理器 -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+        output="screen" args="joint_state_controller left_wheel_effort_controller right_wheel_effort_controller"/>
+  <!-- 建议同时启动 robot_state_publisher 以便在 Rviz 查看 -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+</launch>
