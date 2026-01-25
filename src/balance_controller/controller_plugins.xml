@@ -1,0 +1,9 @@
+<library path="lib/libbalance_controller">
+  <class name="balance_controller/BalanceController"
+         type="balance_controller::BalanceController"
+         base_class_type="controller_interface::ControllerBase">
+    <description>
+      A balance controller for a two-wheeled robot using effort interface and IMU.
+    </description>
+  </class>
+</library>
