@@ -82,9 +82,10 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   double v_error = final_target_vel - raw_vel;
   target_pitch_ = velocity_pid_.computeCommand(v_error, period);
 
-  //平衡环
+  //平衡环: 使用 computeCommand(error, error_dot, dt)
+  // 这等价于 base_effort = Kp * pitch_error + Kd * current_pitch_dot_ (+ Ki * integral)
   double pitch_error = current_pitch_ - target_pitch_;
-  double base_effort = balance_pid_.computeCommand(pitch_error, period);
+  double base_effort = balance_pid_.computeCommand(pitch_error, current_pitch_dot_, period);
 
   //转向环
   double yaw_error = target_angular_vel_ - current_angular_vel_;
@@ -125,6 +126,7 @@ void BalanceController::imuCallback(const sensor_msgs::ImuConstPtr& msg) {
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
   current_pitch_ = pitch;
+  current_pitch_dot_ = msg->angular_velocity.y; // 获取 IMU 提供的角速度作为微分项
   current_angular_vel_ = msg->angular_velocity.z;
 }
 

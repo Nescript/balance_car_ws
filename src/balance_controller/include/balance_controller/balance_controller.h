@@ -51,6 +51,7 @@ private:
   double target_angular_vel_ = 0.0;
   
   double current_pitch_ = 0.0;
+  double current_pitch_dot_ = 0.0;
   double target_pitch_ = 0.0;
 
   double target_x_ = 0.0;
