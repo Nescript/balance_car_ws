@@ -7,7 +7,6 @@ project(balance_description)
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  gazebo_ros
   xacro
 )
 
@@ -46,7 +45,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## catkin specific configuration ##
 ###################################
 catkin_package(
-  CATKIN_DEPENDS roscpp gazebo_ros xacro
+  CATKIN_DEPENDS roscpp xacro
 )
 
 ###########

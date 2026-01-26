@@ -1,0 +1,1 @@
+/home/nesc/balance_car_ws/devel/.private/balance_description/lib/pkgconfig/balance_description.pc

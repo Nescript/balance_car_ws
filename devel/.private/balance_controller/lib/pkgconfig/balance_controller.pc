@@ -1,0 +1,8 @@
+prefix=/home/nesc/balance_car_ws/devel/.private/balance_controller
+
+Name: balance_controller
+Description: Description of balance_controller
+Version: 0.0.0
+Cflags: -I/home/nesc/balance_car_ws/src/balance_controller/include
+Libs: -L${prefix}/lib -lbalance_controller
+Requires: roscpp controller_interface hardware_interface pluginlib realtime_tools control_toolbox sensor_msgs geometry_msgs

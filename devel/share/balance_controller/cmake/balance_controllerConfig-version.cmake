@@ -1,0 +1,1 @@
+/home/nesc/balance_car_ws/devel/.private/balance_controller/share/balance_controller/cmake/balance_controllerConfig-version.cmake
