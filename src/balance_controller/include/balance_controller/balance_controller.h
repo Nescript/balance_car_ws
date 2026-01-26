@@ -11,6 +11,7 @@
 #include <filters/realtime_circular_buffer.h>
 #include <nav_msgs/Odometry.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <std_msgs/Float64.h>
 
 namespace balance_controller {
 
@@ -29,12 +30,12 @@ private:
   hardware_interface::JointHandle left_wheel_joint_, right_wheel_joint_;
   ros::Subscriber imu_sub_;
   ros::Subscriber cmd_vel_sub_;
-  ros::Subscriber combine_odom_sub_;
-  ros::Publisher odom_pub_;
-  
+  ros::Publisher pos_error_pub_;
+  ros::Publisher vel_error_pub_;
+  ros::Publisher pitch_error_pub_;
+
   void imuCallback(const sensor_msgs::ImuConstPtr& msg);
   void cmdVelCallback(const geometry_msgs::TwistConstPtr& msg);
-  void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
 
   control_toolbox::Pid balance_pid_;
   control_toolbox::Pid position_pid_;
@@ -52,7 +53,6 @@ private:
   double current_pitch_ = 0.0;
   double target_pitch_ = 0.0;
 
-  double combine_odom_x_ = 0.0;
   double target_x_ = 0.0;
   
   ros::Time last_imu_time_;

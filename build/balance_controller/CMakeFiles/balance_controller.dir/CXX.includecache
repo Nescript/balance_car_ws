@@ -29,6 +29,8 @@ nav_msgs/Odometry.h
 -
 tf2_geometry_msgs/tf2_geometry_msgs.h
 -
+std_msgs/Float64.h
+-
 
 /home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp
 balance_controller/balance_controller.h
@@ -1584,6 +1586,22 @@ geometry_msgs/Quaternion.h
 geometry_msgs/Vector3.h
 -
 geometry_msgs/Vector3.h
+-
+
+/opt/ros/noetic/include/std_msgs/Float64.h
+string
+-
+vector
+-
+memory
+-
+ros/types.h
+-
+ros/serialization.h
+-
+ros/builtin_message_traits.h
+-
+ros/message_operations.h
 -
 
 /opt/ros/noetic/include/std_msgs/Header.h

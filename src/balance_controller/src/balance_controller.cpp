@@ -35,11 +35,12 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
 
   controller_nh.param("wheel_separation", wheel_separation_, 0.2);
   controller_nh.param("wheel_radius", wheel_radius_, 0.03);
+  pos_error_pub_ = root_nh.advertise<std_msgs::Float64>("position_error", 1);
+  vel_error_pub_ = root_nh.advertise<std_msgs::Float64>("velocity_error", 1);
+  pitch_error_pub_ = root_nh.advertise<std_msgs::Float64>("pitch_error", 1);
 
   imu_sub_ = root_nh.subscribe("imu", 1, &BalanceController::imuCallback, this);
   cmd_vel_sub_ = root_nh.subscribe("cmd_vel", 1, &BalanceController::cmdVelCallback, this);
-  combine_odom_sub_ = root_nh.subscribe("/robot_pose_ekf/combine_odom", 1, &BalanceController::odomCallback, this); // --- IGNORE ---
-  odom_pub_ = root_nh.advertise<nav_msgs::Odometry>("odom", 50);
   x_ = 0.0; y_ = 0.0; theta_ = 0.0;
 
   return true;
@@ -70,39 +71,6 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   y_ += delta_s * sin(theta_ + delta_theta / 2.0);
   theta_ += delta_theta;
 
-  // 里程计消息
-  nav_msgs::Odometry odom;
-  odom.header.stamp = time;
-  odom.header.frame_id = "odom";
-  odom.child_frame_id = "base_footprint";
-
-  odom.pose.pose.position.x = x_;
-  odom.pose.pose.position.y = y_;
-  odom.pose.pose.position.z = 0.0;
-  tf2::Quaternion q;
-  q.setRPY(0, 0, theta_);
-  odom.pose.pose.orientation = tf2::toMsg(q);
-  
-  // 填充协方差矩阵对角线（6x6 矩阵，共 36 个元素）
-  // robot_pose_ekf 至少需要 X, Y, Z 和姿态的协方差非零
-  for(int i = 0; i < 36; i++) {
-    odom.pose.covariance[i] = 0.0;
-  }
-  odom.pose.covariance[0]  = 0.01;  // X
-  odom.pose.covariance[7]  = 0.01;  // Y
-  odom.pose.covariance[14] = 0.01;  // Z
-  odom.pose.covariance[21] = 0.01;  // Roll
-  odom.pose.covariance[28] = 0.01;  // Pitch
-  odom.pose.covariance[35] = 0.05;  // Yaw
-
-  for(int i = 0; i < 36; i++) {
-    odom.twist.covariance[i] = 0.0;
-  }
-  odom.twist.covariance[0] = 0.01;
-  odom.twist.covariance[35] = 0.05;
-
-  odom_pub_.publish(odom);
-
   //位置环
   accumulated_target_pos_ += target_linear_vel_ * dt; 
   double pos_error = accumulated_target_pos_ - x_; 
@@ -132,6 +100,17 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
     ROS_INFO("Pitch: %.4f, Target Pitch: %.4f, Base Effort: %.4f, Current Vel: %.4f, Target Vel: %.4f, Left Cmd: %.4f, Right Cmd: %.4f",
            current_pitch_, target_pitch_, base_effort, filtered_linear_vel_, target_linear_vel_, left_total_cmd, right_total_cmd);
   }
+  std_msgs::Float64 pos_err_msg;
+  std_msgs::Float64 vel_err_msg;
+  std_msgs::Float64 pitch_err_msg;
+
+  pos_err_msg.data = pos_error;
+  vel_err_msg.data = v_error;
+  pitch_err_msg.data = pitch_error;
+
+  pos_error_pub_.publish(pos_err_msg);
+  vel_error_pub_.publish(vel_err_msg);
+  pitch_error_pub_.publish(pitch_err_msg);
 
 }
 
@@ -154,9 +133,6 @@ void BalanceController::cmdVelCallback(const geometry_msgs::TwistConstPtr& msg) 
   target_angular_vel_ = msg->angular.z;
 }
 
-void BalanceController::odomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
-  combine_odom_x_ = msg->pose.pose.position.x;
-}
 } // namespace balance_controller
 
 PLUGINLIB_EXPORT_CLASS(balance_controller::BalanceController, controller_interface::ControllerBase)
