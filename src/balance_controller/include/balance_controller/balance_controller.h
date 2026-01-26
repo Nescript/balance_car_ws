@@ -34,7 +34,7 @@ private:
   
   void imuCallback(const sensor_msgs::ImuConstPtr& msg);
   void cmdVelCallback(const geometry_msgs::TwistConstPtr& msg);
-  void BalanceController::odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
+  void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
 
   control_toolbox::Pid balance_pid_;
   control_toolbox::Pid position_pid_;
@@ -51,6 +51,9 @@ private:
   
   double current_pitch_ = 0.0;
   double target_pitch_ = 0.0;
+
+  double combine_odom_x_ = 0.0;
+  double target_x_ = 0.0;
   
   ros::Time last_imu_time_;
 
@@ -62,6 +65,8 @@ private:
   filters::RealtimeCircularBuffer<double> velocity_buffer_{10, 0.0};
   double filtered_linear_vel_ = 0.0;
   ros::Time last_info_time_;
+
+  double accumulated_target_pos_ = 0.0;
 };
 
 } // namespace balance_controller

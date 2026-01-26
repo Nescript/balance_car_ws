@@ -38,7 +38,7 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
 
   imu_sub_ = root_nh.subscribe("imu", 1, &BalanceController::imuCallback, this);
   cmd_vel_sub_ = root_nh.subscribe("cmd_vel", 1, &BalanceController::cmdVelCallback, this);
-  combine_odom_sub_ = root_nh.subscribe("/robot_pose_ekf/combine_odom", 1, &BalanceController::cmdVelCallback, this); // --- IGNORE ---
+  combine_odom_sub_ = root_nh.subscribe("/robot_pose_ekf/combine_odom", 1, &BalanceController::odomCallback, this); // --- IGNORE ---
   odom_pub_ = root_nh.advertise<nav_msgs::Odometry>("odom", 50);
   x_ = 0.0; y_ = 0.0; theta_ = 0.0;
 
@@ -59,36 +59,9 @@ void BalanceController::starting(const ros::Time& time) {
 }
 
 void BalanceController::update(const ros::Time& time, const ros::Duration& period) {
-  double raw_vel = (left_wheel_joint_.getVelocity() + right_wheel_joint_.getVelocity()) / 2.0 * wheel_radius_;
-  
-  // 1. 俯仰和线速度控制（原有逻辑）
-  double v_error = target_linear_vel_ - raw_vel;
-  target_pitch_ = velocity_pid_.computeCommand(v_error, period);
-  double pitch_error = current_pitch_ - target_pitch_;
-  double base_effort = balance_pid_.computeCommand(pitch_error, period);
-
-
-  double yaw_error = target_angular_vel_ - current_angular_vel_;
-  double steering_effort = yaw_pid_.computeCommand(yaw_error, period);
-
-  double left_total_cmd = base_effort - steering_effort;
-  double right_total_cmd = base_effort + steering_effort;
-
-  left_wheel_joint_.setCommand(left_total_cmd);
-  right_wheel_joint_.setCommand(right_total_cmd);
-  if (time - last_info_time_ > ros::Duration(1.5)) {
-    last_info_time_ = time;
-    ROS_INFO("Pitch: %.4f, Target Pitch: %.4f, Base Effort: %.4f, Current Vel: %.4f, Target Vel: %.4f, Left Cmd: %.4f, Right Cmd: %.4f",
-           current_pitch_, target_pitch_, base_effort, filtered_linear_vel_, target_linear_vel_, left_total_cmd, right_total_cmd);
-  }
-
   double dt = period.toSec();
-  double v_left = left_wheel_joint_.getVelocity() * wheel_radius_;
-  double v_right = right_wheel_joint_.getVelocity() * wheel_radius_;
-
-  // 1. 运动学计算 (差分模型)
-  double v_linear = (v_right + v_left) / 2.0;
-  double v_angular = (v_right - v_left) / wheel_separation_;
+  double v_linear = (left_wheel_joint_.getVelocity() + right_wheel_joint_.getVelocity()) / 2.0 * wheel_radius_;
+  double v_angular = (right_wheel_joint_.getVelocity() - left_wheel_joint_.getVelocity()) / wheel_separation_ * wheel_radius_;
 
   double delta_s = v_linear * dt;
   double delta_theta = v_angular * dt;
@@ -97,7 +70,7 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   y_ += delta_s * sin(theta_ + delta_theta / 2.0);
   theta_ += delta_theta;
 
-  // 2. 发布里程计消息
+  // 里程计消息
   nav_msgs::Odometry odom;
   odom.header.stamp = time;
   odom.header.frame_id = "odom";
@@ -122,7 +95,6 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   odom.pose.covariance[28] = 0.01;  // Pitch
   odom.pose.covariance[35] = 0.05;  // Yaw
 
-  // 如果你也发布位姿速度，twist 协方差也建议填充
   for(int i = 0; i < 36; i++) {
     odom.twist.covariance[i] = 0.0;
   }
@@ -130,6 +102,37 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   odom.twist.covariance[35] = 0.05;
 
   odom_pub_.publish(odom);
+
+  //位置环
+  accumulated_target_pos_ += target_linear_vel_ * dt; 
+  double pos_error = accumulated_target_pos_ - x_; 
+  double pos_output_vel = position_pid_.computeCommand(pos_error, period);
+  
+  //速度环
+  double final_target_vel = pos_output_vel; 
+  double raw_vel = (left_wheel_joint_.getVelocity() + right_wheel_joint_.getVelocity()) / 2.0 * wheel_radius_;
+  double v_error = final_target_vel - raw_vel;
+  target_pitch_ = velocity_pid_.computeCommand(v_error, period);
+
+  //平衡环
+  double pitch_error = current_pitch_ - target_pitch_;
+  double base_effort = balance_pid_.computeCommand(pitch_error, period);
+
+  //转向环
+  double yaw_error = target_angular_vel_ - current_angular_vel_;
+  double steering_effort = yaw_pid_.computeCommand(yaw_error, period);
+
+  double left_total_cmd = base_effort - steering_effort;
+  double right_total_cmd = base_effort + steering_effort;
+
+  left_wheel_joint_.setCommand(left_total_cmd);
+  right_wheel_joint_.setCommand(right_total_cmd);
+  if (time - last_info_time_ > ros::Duration(1.5)) {
+    last_info_time_ = time;
+    ROS_INFO("Pitch: %.4f, Target Pitch: %.4f, Base Effort: %.4f, Current Vel: %.4f, Target Vel: %.4f, Left Cmd: %.4f, Right Cmd: %.4f",
+           current_pitch_, target_pitch_, base_effort, filtered_linear_vel_, target_linear_vel_, left_total_cmd, right_total_cmd);
+  }
+
 }
 
 void BalanceController::stopping(const ros::Time& time) {
@@ -143,8 +146,6 @@ void BalanceController::imuCallback(const sensor_msgs::ImuConstPtr& msg) {
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
   current_pitch_ = pitch;
-
-  // 获取 Z 轴实时角速度
   current_angular_vel_ = msg->angular_velocity.z;
 }
 
@@ -154,7 +155,7 @@ void BalanceController::cmdVelCallback(const geometry_msgs::TwistConstPtr& msg) 
 }
 
 void BalanceController::odomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
-  // 这里可以根据需要处理里程计数据
+  combine_odom_x_ = msg->pose.pose.position.x;
 }
 } // namespace balance_controller
 
