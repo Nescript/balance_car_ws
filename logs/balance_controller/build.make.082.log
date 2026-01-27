@@ -1,0 +1,10 @@
+[35m[1mScanning dependencies of target balance_controller[0m
+[ 66%] [32mBuilding CXX object CMakeFiles/balance_controller.dir/src/balance_controller.cpp.o[0m
+[ 66%] [32mBuilding CXX object CMakeFiles/balance_controller.dir/src/filters/filters.cpp.o[0m
+In file included from [01m[K/home/nesc/balance_car_ws/src/balance_controller/include/balance_controller/balance_controller.h:11[m[K,
+                 from [01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:1[m[K:
+[01m[K/opt/ros/noetic/include/filters/realtime_circular_buffer.h:40:2:[m[K [01;35m[Kwarning: [m[K#warning Including header <filters/realtime_circular_buffer.h> is deprecated, include <filters/realtime_circular_buffer.hpp> instead. [[01;35m[K-Wcpp[m[K]
+   40 | #[01;35m[Kwarning[m[K Including header <filters/realtime_circular_buffer.h> is deprecated, \
+      |  [01;35m[K^~~~~~~[m[K
+[100%] [32m[1mLinking CXX shared library /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so[0m
+[100%] Built target balance_controller

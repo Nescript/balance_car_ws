@@ -70,19 +70,40 @@ CMakeFiles/balance_controller.dir/src/balance_controller.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/balance_controller.dir/src/balance_controller.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp -o CMakeFiles/balance_controller.dir/src/balance_controller.cpp.s
 
+CMakeFiles/balance_controller.dir/src/filters/filters.cpp.o: CMakeFiles/balance_controller.dir/flags.make
+CMakeFiles/balance_controller.dir/src/filters/filters.cpp.o: /home/nesc/balance_car_ws/src/balance_controller/src/filters/filters.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/nesc/balance_car_ws/build/balance_controller/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/balance_controller.dir/src/filters/filters.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/balance_controller.dir/src/filters/filters.cpp.o -c /home/nesc/balance_car_ws/src/balance_controller/src/filters/filters.cpp
+
+CMakeFiles/balance_controller.dir/src/filters/filters.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/balance_controller.dir/src/filters/filters.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/nesc/balance_car_ws/src/balance_controller/src/filters/filters.cpp > CMakeFiles/balance_controller.dir/src/filters/filters.cpp.i
+
+CMakeFiles/balance_controller.dir/src/filters/filters.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/balance_controller.dir/src/filters/filters.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/nesc/balance_car_ws/src/balance_controller/src/filters/filters.cpp -o CMakeFiles/balance_controller.dir/src/filters/filters.cpp.s
+
 # Object files for target balance_controller
 balance_controller_OBJECTS = \
-"CMakeFiles/balance_controller.dir/src/balance_controller.cpp.o"
+"CMakeFiles/balance_controller.dir/src/balance_controller.cpp.o" \
+"CMakeFiles/balance_controller.dir/src/filters/filters.cpp.o"
 
 # External object files for target balance_controller
 balance_controller_EXTERNAL_OBJECTS =
 
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: CMakeFiles/balance_controller.dir/src/balance_controller.cpp.o
+/home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: CMakeFiles/balance_controller.dir/src/filters/filters.cpp.o
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: CMakeFiles/balance_controller.dir/build.make
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /opt/ros/noetic/lib/libcontrol_toolbox.so
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /usr/lib/x86_64-linux-gnu/libtinyxml.so
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /opt/ros/noetic/lib/libdynamic_reconfigure_config_init_mutex.so
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /opt/ros/noetic/lib/librealtime_tools.so
+/home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /usr/lib/liborocos-kdl.so
+/home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /usr/lib/liborocos-kdl.so
+/home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /opt/ros/noetic/lib/libtf2_ros.so
+/home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /opt/ros/noetic/lib/libactionlib.so
+/home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /opt/ros/noetic/lib/libmessage_filters.so
+/home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /opt/ros/noetic/lib/libtf2.so
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /opt/ros/noetic/lib/libmean.so
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /opt/ros/noetic/lib/libparams.so
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /opt/ros/noetic/lib/libincrement.so
@@ -114,7 +135,7 @@ balance_controller_EXTERNAL_OBJECTS =
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /usr/lib/x86_64-linux-gnu/libboost_system.so.1.71.0
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: /usr/lib/x86_64-linux-gnu/libtinyxml2.so
 /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so: CMakeFiles/balance_controller.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/nesc/balance_car_ws/build/balance_controller/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX shared library /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/nesc/balance_car_ws/build/balance_controller/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX shared library /home/nesc/balance_car_ws/devel/.private/balance_controller/lib/libbalance_controller.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/balance_controller.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

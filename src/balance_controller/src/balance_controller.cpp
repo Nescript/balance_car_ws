@@ -2,6 +2,7 @@
 #include <pluginlib/class_list_macros.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
+#include <boost/concept_check.hpp>
 
 namespace balance_controller {
 
@@ -14,105 +15,84 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
     ROS_ERROR("Could not get joint handles: %s", e.what());
     return false;
   }
-  
-  if (!balance_pid_.init(ros::NodeHandle(controller_nh, "balance_pid"))) {
-    ROS_ERROR("Failed to initialize balance PID");
-    return false;
-  }
-  if (!velocity_pid_.init(ros::NodeHandle(controller_nh, "velocity_pid"))) {
-    ROS_ERROR("Failed to initialize left velocity PID");
-    return false;
-  }
-  if (!position_pid_.init(ros::NodeHandle(controller_nh, "position_pid"))) {
-    ROS_ERROR("Failed to initialize position PID");
-    return false;
-  }
   if (!yaw_pid_.init(ros::NodeHandle(controller_nh, "yaw_pid"))) {
     ROS_ERROR("Failed to initialize yaw PID");
     return false;
   }
-
+  if (!controller_nh.getParam("k1", k1)) {
+    ROS_WARN("Parameter 'k1' not set. Using default: %f", 0.0);
+  }
+  if (!controller_nh.getParam("k2", k2)) {
+    ROS_WARN("Parameter 'k2' not set. Using default: %f", 0.0);
+  }
+  if (!controller_nh.getParam("k3", k3)) {
+    ROS_WARN("Parameter 'k3' not set. Using default: %f", 0.0);
+  }
+  if (!controller_nh.getParam("k4", k4)) {
+    ROS_WARN("Parameter 'k4' not set. Using default: %f", 0.0);
+  }
 
   controller_nh.param("wheel_separation", wheel_separation_, 0.2);
   controller_nh.param("wheel_radius", wheel_radius_, 0.03);
   pos_error_pub_ = root_nh.advertise<std_msgs::Float64>("position_error", 1);
   vel_error_pub_ = root_nh.advertise<std_msgs::Float64>("velocity_error", 1);
   pitch_error_pub_ = root_nh.advertise<std_msgs::Float64>("pitch_error", 1);
+  omega_error_pub_ = root_nh.advertise<std_msgs::Float64>("omega_error", 1);
+  last_effort_pub_ = root_nh.advertise<std_msgs::Float64>("last_effort", 1);
 
   imu_sub_ = root_nh.subscribe("imu", 1, &BalanceController::imuCallback, this);
   cmd_vel_sub_ = root_nh.subscribe("cmd_vel", 1, &BalanceController::cmdVelCallback, this);
-  x_ = 0.0; y_ = 0.0; theta_ = 0.0;
 
   return true;
 }
 
 void BalanceController::starting(const ros::Time& time) {
-  balance_pid_.reset();
-  velocity_pid_.reset();
-
   target_linear_vel_ = 0.0;
   target_angular_vel_ = 0.0;
   target_pitch_ = 0.0;
-  
-  velocity_buffer_.clear();
-  filtered_linear_vel_ = 0.0;
-  last_info_time_ = time;
+
+  current_pos_ = 0.0;
+  target_pos_ = 0.0;
 }
 
 void BalanceController::update(const ros::Time& time, const ros::Duration& period) {
   double dt = period.toSec();
-  double v_linear = (left_wheel_joint_.getVelocity() + right_wheel_joint_.getVelocity()) / 2.0 * wheel_radius_;
-  double v_angular = (right_wheel_joint_.getVelocity() - left_wheel_joint_.getVelocity()) / wheel_separation_ * wheel_radius_;
-
-  double delta_s = v_linear * dt;
-  double delta_theta = v_angular * dt;
-
-  x_ += delta_s * cos(theta_ + delta_theta / 2.0);
-  y_ += delta_s * sin(theta_ + delta_theta / 2.0);
-  theta_ += delta_theta;
-
-  //位置环
-  accumulated_target_pos_ += target_linear_vel_ * dt; 
-  double pos_error = accumulated_target_pos_ - x_; 
-  double pos_output_vel = position_pid_.computeCommand(pos_error, period);
   
-  //速度环
-  double final_target_vel = pos_output_vel; 
-  double raw_vel = (left_wheel_joint_.getVelocity() + right_wheel_joint_.getVelocity()) / 2.0 * wheel_radius_;
-  double v_error = final_target_vel - raw_vel;
-  target_pitch_ = velocity_pid_.computeCommand(v_error, period);
+  double current_raw_linear_vel_ = (left_wheel_joint_.getVelocity() + right_wheel_joint_.getVelocity()) * wheel_radius_ / 2.0;
+  current_linear_vel_ = vel_kf.update(current_raw_linear_vel_, dt, last_effort_);
 
-  //平衡环: 使用 computeCommand(error, error_dot, dt)
-  // 这等价于 base_effort = Kp * pitch_error + Kd * current_pitch_dot_ (+ Ki * integral)
+  current_pos_ += current_linear_vel_ * dt;
+  target_pos_ += target_linear_vel_ * dt;
+  
+  double pos_error = current_pos_ - target_pos_; 
+  double vel_error = current_linear_vel_ - target_linear_vel_;
+
   double pitch_error = current_pitch_ - target_pitch_;
-  double base_effort = balance_pid_.computeCommand(pitch_error, current_pitch_dot_, period);
+  double omega_error = current_omega_ - target_omega_;
+  double base_effort = -(k1 * pos_error + k2 * vel_error + k3 * pitch_error + k4 * omega_error);
+  
+  double yaw_effort = yaw_pid_.computeCommand(target_angular_vel_ - current_angular_vel_, period);
+  
+  left_wheel_joint_.setCommand(base_effort - yaw_effort);
+  right_wheel_joint_.setCommand(base_effort + yaw_effort);
+  last_effort_ = base_effort;
 
-  //转向环
-  double yaw_error = target_angular_vel_ - current_angular_vel_;
-  double steering_effort = yaw_pid_.computeCommand(yaw_error, period);
-
-  double left_total_cmd = base_effort - steering_effort;
-  double right_total_cmd = base_effort + steering_effort;
-
-  left_wheel_joint_.setCommand(left_total_cmd);
-  right_wheel_joint_.setCommand(right_total_cmd);
-  if (time - last_info_time_ > ros::Duration(1.5)) {
-    last_info_time_ = time;
-    ROS_INFO("Pitch: %.4f, Target Pitch: %.4f, Base Effort: %.4f, Current Vel: %.4f, Target Vel: %.4f, Left Cmd: %.4f, Right Cmd: %.4f",
-           current_pitch_, target_pitch_, base_effort, filtered_linear_vel_, target_linear_vel_, left_total_cmd, right_total_cmd);
-  }
-  std_msgs::Float64 pos_err_msg;
-  std_msgs::Float64 vel_err_msg;
-  std_msgs::Float64 pitch_err_msg;
-
-  pos_err_msg.data = pos_error;
-  vel_err_msg.data = v_error;
-  pitch_err_msg.data = pitch_error;
-
-  pos_error_pub_.publish(pos_err_msg);
-  vel_error_pub_.publish(vel_err_msg);
-  pitch_error_pub_.publish(pitch_err_msg);
-
+  // 发布误差信息
+  std_msgs::Float64 pos_error_msg;
+  pos_error_msg.data = pos_error;
+  pos_error_pub_.publish(pos_error_msg);
+  std_msgs::Float64 vel_error_msg;
+  vel_error_msg.data = vel_error;
+  vel_error_pub_.publish(vel_error_msg);
+  std_msgs::Float64 pitch_error_msg;
+  pitch_error_msg.data = pitch_error;
+  pitch_error_pub_.publish(pitch_error_msg);
+  std_msgs::Float64 omega_error_msg;
+  omega_error_msg.data = omega_error;
+  omega_error_pub_.publish(omega_error_msg);
+  std_msgs::Float64 last_effort_msg;
+  last_effort_msg.data = last_effort_;
+  last_effort_pub_.publish(last_effort_msg);
 }
 
 void BalanceController::stopping(const ros::Time& time) {
@@ -126,7 +106,7 @@ void BalanceController::imuCallback(const sensor_msgs::ImuConstPtr& msg) {
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
   current_pitch_ = pitch;
-  current_pitch_dot_ = msg->angular_velocity.y; // 获取 IMU 提供的角速度作为微分项
+  current_omega_ = msg->angular_velocity.y;
   current_angular_vel_ = msg->angular_velocity.z;
 }
 

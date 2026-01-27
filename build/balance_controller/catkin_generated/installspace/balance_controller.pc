@@ -5,4 +5,4 @@ Description: Description of balance_controller
 Version: 0.0.0
 Cflags: -I${prefix}/include
 Libs: -L${prefix}/lib -lbalance_controller
-Requires: roscpp controller_interface hardware_interface pluginlib realtime_tools control_toolbox sensor_msgs geometry_msgs
+Requires: roscpp controller_interface hardware_interface pluginlib realtime_tools control_toolbox sensor_msgs geometry_msgs nav_msgs std_msgs tf2 tf2_geometry_msgs filters

@@ -12,8 +12,35 @@
 #include <nav_msgs/Odometry.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <std_msgs/Float64.h>
+#include "balance_controller/filters/filters.h"
 
 namespace balance_controller {
+
+class VelocityKalman {
+public:
+    VelocityKalman(double Q, double R, double P) : Q_(Q), R_(R), P_(P), v_est_(0.0) {}
+
+    double update(double v_meas, double dt, double effort) {
+        // 1. 预测 (Predict)
+        // 假设加速度项由 effort 决定，a_coeff 需要根据物理模型微调，也可设为 0 纯靠模型自校正
+        double a_coeff = 0.5; 
+        double v_pred = v_est_ + (a_coeff * effort) * dt;
+        P_ = P_ + Q_;
+
+        // 2. 更新 (Update)
+        double K = P_ / (P_ + R_);
+        v_est_ = v_pred + K * (v_meas - v_pred);
+        P_ = (1 - K) * P_;
+
+        return v_est_;
+    }
+
+private:
+    double Q_; // 过程噪声：相信模型的程度
+    double R_; // 测量噪声：相信编码器的程度
+    double P_; // 估计误差协方差
+    double v_est_; // 估计的速度值
+};
 
 class BalanceController : public controller_interface::Controller<hardware_interface::EffortJointInterface>{
 public:
@@ -33,41 +60,33 @@ private:
   ros::Publisher pos_error_pub_;
   ros::Publisher vel_error_pub_;
   ros::Publisher pitch_error_pub_;
+  ros::Publisher omega_error_pub_;
+  ros::Publisher last_effort_pub_;
 
   void imuCallback(const sensor_msgs::ImuConstPtr& msg);
   void cmdVelCallback(const geometry_msgs::TwistConstPtr& msg);
 
-  control_toolbox::Pid balance_pid_;
-  control_toolbox::Pid position_pid_;
-  control_toolbox::Pid velocity_pid_;
   control_toolbox::Pid yaw_pid_;
 
-  double current_angular_vel_ = 0.0;
-  double balance_cmd_ = 0.0;
+  double current_pitch_ = 0.0; // 当前角度
+  double current_pos_ = 0.0; // 当前位移
+  double current_linear_vel_ = 0.0; // 当前速度
+  double current_angular_vel_ = 0.0; // 当前角速度
+  double current_omega_ = 0.0; // 当前角速度
 
-  double velocity_cmd_ = 0.0;
-  
+  double target_pitch_ = 0.0;
+  double target_pos_ = 0.0;
   double target_linear_vel_ = 0.0;
   double target_angular_vel_ = 0.0;
-  
-  double current_pitch_ = 0.0;
-  double current_pitch_dot_ = 0.0;
-  double target_pitch_ = 0.0;
-
-  double target_x_ = 0.0;
-  
-  ros::Time last_imu_time_;
+  double target_omega_ = 0.0;
 
   double wheel_separation_ = 0.53; // 轮距
   double wheel_radius_ = 0.1;      // 轮子半径
 
-  double x_ = 0.0, y_ = 0.0, theta_ = 0.0; // 里程计位置
-
-  filters::RealtimeCircularBuffer<double> velocity_buffer_{10, 0.0};
-  double filtered_linear_vel_ = 0.0;
-  ros::Time last_info_time_;
-
-  double accumulated_target_pos_ = 0.0;
+  double last_effort_ = 0.0; // 上一次控制输出
+  double k1, k2, k3, k4; // LQR 控制器增益
+  VelocityKalman vel_kf{0.01, 0.1, 1.0};
 };
+
 
 } // namespace balance_controller

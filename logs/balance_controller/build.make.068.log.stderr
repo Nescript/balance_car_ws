@@ -1,0 +1,134 @@
+In file included from [01m[K/home/nesc/balance_car_ws/src/balance_controller/include/balance_controller/balance_controller.h:11[m[K,
+                 from [01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:1[m[K:
+[01m[K/opt/ros/noetic/include/filters/realtime_circular_buffer.h:40:2:[m[K [01;35m[Kwarning: [m[K#warning Including header <filters/realtime_circular_buffer.h> is deprecated, include <filters/realtime_circular_buffer.hpp> instead. [[01;35m[K-Wcpp[m[K]
+   40 | #[01;35m[Kwarning[m[K Including header <filters/realtime_circular_buffer.h> is deprecated, \
+      |  [01;35m[K^~~~~~~[m[K
+In file included from [01m[K/opt/ros/noetic/include/ros/ros.h:40[m[K,
+                 from [01m[K/home/nesc/balance_car_ws/src/balance_controller/include/balance_controller/balance_controller.h:3[m[K,
+                 from [01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:1[m[K:
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:[m[K In member function ‘[01m[Kvirtual bool balance_controller::BalanceController::init(hardware_interface::EffortJointInterface*, ros::NodeHandle&, ros::NodeHandle&)[m[K’:
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:23:14:[m[K [01;35m[Kwarning: [m[Kformat ‘[01m[K%f[m[K’ expects argument of type ‘[01m[Kdouble[m[K’, but argument 8 has type ‘[01m[Kint[m[K’ [[01;35m[K-Wformat=[m[K]
+   23 |     ROS_WARN([01;35m[K"Parameter 'k1' not set. Using default: %f"[m[K, [32m[K0[m[K);
+      |              [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K  [32m[K~[m[K
+      |                                                           [32m[K|[m[K
+      |                                                           [32m[Kint[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:351:165:[m[K [01;36m[Knote: [m[Kin definition of macro ‘[01m[KROSCONSOLE_PRINT_AT_LOCATION_WITH_FILTER[m[K’
+  351 |     ::ros::console::print(filter, __rosconsole_define_location__loc.logger_, __rosconsole_define_location__loc.level_, __FILE__, __LINE__, __ROSCONSOLE_FUNCTION__, [01;36m[K__VA_ARGS__[m[K)
+      |                                                                                                                                                                     [01;36m[K^~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:390:7:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROSCONSOLE_PRINT_AT_LOCATION[m[K’
+  390 |       [01;36m[KROSCONSOLE_PRINT_AT_LOCATION[m[K(__VA_ARGS__); \
+      |       [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:575:35:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_LOG_COND[m[K’
+  575 | #define ROS_LOG(level, name, ...) [01;36m[KROS_LOG_COND[m[K(true, level, name, __VA_ARGS__)
+      |                                   [01;36m[K^~~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/rosconsole/macros_generated.h:162:23:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_LOG[m[K’
+  162 | #define ROS_WARN(...) [01;36m[KROS_LOG[m[K(::ros::console::levels::Warn, ROSCONSOLE_DEFAULT_NAME, __VA_ARGS__)
+      |                       [01;36m[K^~~~~~~[m[K
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:23:5:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_WARN[m[K’
+   23 |     [01;36m[KROS_WARN[m[K("Parameter 'k1' not set. Using default: %f", 0);
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:23:55:[m[K [01;36m[Knote: [m[Kformat string is defined here
+   23 |     ROS_WARN("Parameter 'k1' not set. Using default: [01;36m[K%f[m[K", 0);
+      |                                                      [01;36m[K~^[m[K
+      |                                                       [01;36m[K|[m[K
+      |                                                       [01;36m[Kdouble[m[K
+      |                                                      [32m[K%d[m[K
+In file included from [01m[K/opt/ros/noetic/include/ros/ros.h:40[m[K,
+                 from [01m[K/home/nesc/balance_car_ws/src/balance_controller/include/balance_controller/balance_controller.h:3[m[K,
+                 from [01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:1[m[K:
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:26:14:[m[K [01;35m[Kwarning: [m[Kformat ‘[01m[K%f[m[K’ expects argument of type ‘[01m[Kdouble[m[K’, but argument 8 has type ‘[01m[Kint[m[K’ [[01;35m[K-Wformat=[m[K]
+   26 |     ROS_WARN([01;35m[K"Parameter 'k2' not set. Using default: %f"[m[K, [32m[K0[m[K);
+      |              [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K  [32m[K~[m[K
+      |                                                           [32m[K|[m[K
+      |                                                           [32m[Kint[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:351:165:[m[K [01;36m[Knote: [m[Kin definition of macro ‘[01m[KROSCONSOLE_PRINT_AT_LOCATION_WITH_FILTER[m[K’
+  351 |     ::ros::console::print(filter, __rosconsole_define_location__loc.logger_, __rosconsole_define_location__loc.level_, __FILE__, __LINE__, __ROSCONSOLE_FUNCTION__, [01;36m[K__VA_ARGS__[m[K)
+      |                                                                                                                                                                     [01;36m[K^~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:390:7:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROSCONSOLE_PRINT_AT_LOCATION[m[K’
+  390 |       [01;36m[KROSCONSOLE_PRINT_AT_LOCATION[m[K(__VA_ARGS__); \
+      |       [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:575:35:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_LOG_COND[m[K’
+  575 | #define ROS_LOG(level, name, ...) [01;36m[KROS_LOG_COND[m[K(true, level, name, __VA_ARGS__)
+      |                                   [01;36m[K^~~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/rosconsole/macros_generated.h:162:23:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_LOG[m[K’
+  162 | #define ROS_WARN(...) [01;36m[KROS_LOG[m[K(::ros::console::levels::Warn, ROSCONSOLE_DEFAULT_NAME, __VA_ARGS__)
+      |                       [01;36m[K^~~~~~~[m[K
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:26:5:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_WARN[m[K’
+   26 |     [01;36m[KROS_WARN[m[K("Parameter 'k2' not set. Using default: %f", 0);
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:26:55:[m[K [01;36m[Knote: [m[Kformat string is defined here
+   26 |     ROS_WARN("Parameter 'k2' not set. Using default: [01;36m[K%f[m[K", 0);
+      |                                                      [01;36m[K~^[m[K
+      |                                                       [01;36m[K|[m[K
+      |                                                       [01;36m[Kdouble[m[K
+      |                                                      [32m[K%d[m[K
+In file included from [01m[K/opt/ros/noetic/include/ros/ros.h:40[m[K,
+                 from [01m[K/home/nesc/balance_car_ws/src/balance_controller/include/balance_controller/balance_controller.h:3[m[K,
+                 from [01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:1[m[K:
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:29:14:[m[K [01;35m[Kwarning: [m[Kformat ‘[01m[K%f[m[K’ expects argument of type ‘[01m[Kdouble[m[K’, but argument 8 has type ‘[01m[Kint[m[K’ [[01;35m[K-Wformat=[m[K]
+   29 |     ROS_WARN([01;35m[K"Parameter 'k3' not set. Using default: %f"[m[K, [32m[K0[m[K);
+      |              [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K  [32m[K~[m[K
+      |                                                           [32m[K|[m[K
+      |                                                           [32m[Kint[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:351:165:[m[K [01;36m[Knote: [m[Kin definition of macro ‘[01m[KROSCONSOLE_PRINT_AT_LOCATION_WITH_FILTER[m[K’
+  351 |     ::ros::console::print(filter, __rosconsole_define_location__loc.logger_, __rosconsole_define_location__loc.level_, __FILE__, __LINE__, __ROSCONSOLE_FUNCTION__, [01;36m[K__VA_ARGS__[m[K)
+      |                                                                                                                                                                     [01;36m[K^~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:390:7:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROSCONSOLE_PRINT_AT_LOCATION[m[K’
+  390 |       [01;36m[KROSCONSOLE_PRINT_AT_LOCATION[m[K(__VA_ARGS__); \
+      |       [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:575:35:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_LOG_COND[m[K’
+  575 | #define ROS_LOG(level, name, ...) [01;36m[KROS_LOG_COND[m[K(true, level, name, __VA_ARGS__)
+      |                                   [01;36m[K^~~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/rosconsole/macros_generated.h:162:23:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_LOG[m[K’
+  162 | #define ROS_WARN(...) [01;36m[KROS_LOG[m[K(::ros::console::levels::Warn, ROSCONSOLE_DEFAULT_NAME, __VA_ARGS__)
+      |                       [01;36m[K^~~~~~~[m[K
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:29:5:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_WARN[m[K’
+   29 |     [01;36m[KROS_WARN[m[K("Parameter 'k3' not set. Using default: %f", 0);
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:29:55:[m[K [01;36m[Knote: [m[Kformat string is defined here
+   29 |     ROS_WARN("Parameter 'k3' not set. Using default: [01;36m[K%f[m[K", 0);
+      |                                                      [01;36m[K~^[m[K
+      |                                                       [01;36m[K|[m[K
+      |                                                       [01;36m[Kdouble[m[K
+      |                                                      [32m[K%d[m[K
+In file included from [01m[K/opt/ros/noetic/include/ros/ros.h:40[m[K,
+                 from [01m[K/home/nesc/balance_car_ws/src/balance_controller/include/balance_controller/balance_controller.h:3[m[K,
+                 from [01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:1[m[K:
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:32:14:[m[K [01;35m[Kwarning: [m[Kformat ‘[01m[K%f[m[K’ expects argument of type ‘[01m[Kdouble[m[K’, but argument 8 has type ‘[01m[Kint[m[K’ [[01;35m[K-Wformat=[m[K]
+   32 |     ROS_WARN([01;35m[K"Parameter 'k4' not set. Using default: %f"[m[K, [32m[K0[m[K);
+      |              [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K  [32m[K~[m[K
+      |                                                           [32m[K|[m[K
+      |                                                           [32m[Kint[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:351:165:[m[K [01;36m[Knote: [m[Kin definition of macro ‘[01m[KROSCONSOLE_PRINT_AT_LOCATION_WITH_FILTER[m[K’
+  351 |     ::ros::console::print(filter, __rosconsole_define_location__loc.logger_, __rosconsole_define_location__loc.level_, __FILE__, __LINE__, __ROSCONSOLE_FUNCTION__, [01;36m[K__VA_ARGS__[m[K)
+      |                                                                                                                                                                     [01;36m[K^~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:390:7:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROSCONSOLE_PRINT_AT_LOCATION[m[K’
+  390 |       [01;36m[KROSCONSOLE_PRINT_AT_LOCATION[m[K(__VA_ARGS__); \
+      |       [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/ros/console.h:575:35:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_LOG_COND[m[K’
+  575 | #define ROS_LOG(level, name, ...) [01;36m[KROS_LOG_COND[m[K(true, level, name, __VA_ARGS__)
+      |                                   [01;36m[K^~~~~~~~~~~~[m[K
+[01m[K/opt/ros/noetic/include/rosconsole/macros_generated.h:162:23:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_LOG[m[K’
+  162 | #define ROS_WARN(...) [01;36m[KROS_LOG[m[K(::ros::console::levels::Warn, ROSCONSOLE_DEFAULT_NAME, __VA_ARGS__)
+      |                       [01;36m[K^~~~~~~[m[K
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:32:5:[m[K [01;36m[Knote: [m[Kin expansion of macro ‘[01m[KROS_WARN[m[K’
+   32 |     [01;36m[KROS_WARN[m[K("Parameter 'k4' not set. Using default: %f", 0);
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:32:55:[m[K [01;36m[Knote: [m[Kformat string is defined here
+   32 |     ROS_WARN("Parameter 'k4' not set. Using default: [01;36m[K%f[m[K", 0);
+      |                                                      [01;36m[K~^[m[K
+      |                                                       [01;36m[K|[m[K
+      |                                                       [01;36m[Kdouble[m[K
+      |                                                      [32m[K%d[m[K
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:36:3:[m[K [01;31m[Kerror: [m[K‘[01m[Kvel_error_filter[m[K’ was not declared in this scope; did you mean ‘[01m[Kvel_error_pub_[m[K’?
+   36 |   [01;31m[Kvel_error_filter[m[K.clear();
+      |   [01;31m[K^~~~~~~~~~~~~~~~[m[K
+      |   [32m[Kvel_error_pub_[m[K
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:[m[K In member function ‘[01m[Kvirtual void balance_controller::BalanceController::update(const ros::Time&, const ros::Duration&)[m[K’:
+[01m[K/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp:69:3:[m[K [01;31m[Kerror: [m[K‘[01m[Kvel_error_filter[m[K’ was not declared in this scope; did you mean ‘[01m[Kvel_error_pub_[m[K’?
+   69 |   [01;31m[Kvel_error_filter[m[K.input(current_linear_vel_ - target_linear_vel_);
+      |   [01;31m[K^~~~~~~~~~~~~~~~[m[K
+      |   [32m[Kvel_error_pub_[m[K
+make[2]: *** [CMakeFiles/balance_controller.dir/build.make:63: CMakeFiles/balance_controller.dir/src/balance_controller.cpp.o] Error 1
+make[1]: *** [CMakeFiles/Makefile2:207: CMakeFiles/balance_controller.dir/all] Error 2
+make: *** [Makefile:141: all] Error 2

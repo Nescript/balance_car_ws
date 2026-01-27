@@ -187,7 +187,7 @@ foreach(t ${balance_controller_EXPORTED_TARGETS})
   endif()
 endforeach()
 
-set(depends "roscpp;controller_interface;hardware_interface;pluginlib;realtime_tools;control_toolbox;sensor_msgs;geometry_msgs")
+set(depends "roscpp;controller_interface;hardware_interface;pluginlib;realtime_tools;control_toolbox;sensor_msgs;geometry_msgs;nav_msgs;std_msgs;tf2;tf2_geometry_msgs;filters")
 foreach(depend ${depends})
   string(REPLACE " " ";" depend_list ${depend})
   # the package name of the dependency must be kept in a unique variable so that it is not overwritten in recursive calls

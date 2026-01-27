@@ -5,6 +5,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
   "/home/nesc/balance_car_ws/src/balance_controller/src/balance_controller.cpp" "/home/nesc/balance_car_ws/build/balance_controller/CMakeFiles/balance_controller.dir/src/balance_controller.cpp.o"
+  "/home/nesc/balance_car_ws/src/balance_controller/src/filters/filters.cpp" "/home/nesc/balance_car_ws/build/balance_controller/CMakeFiles/balance_controller.dir/src/filters/filters.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -21,6 +22,7 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/home/nesc/balance_car_ws/src/balance_controller/include"
   "/opt/ros/noetic/include"
   "/opt/ros/noetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp"
+  "/usr/include/eigen3"
   )
 
 # Targets to which this target links.
