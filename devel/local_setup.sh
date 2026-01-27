@@ -1,1 +1,0 @@
-/home/nesc/balance_car_ws/devel/.private/catkin_tools_prebuild/local_setup.sh

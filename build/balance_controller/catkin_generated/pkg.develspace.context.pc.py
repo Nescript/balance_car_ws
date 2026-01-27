@@ -1,8 +1,0 @@
-# generated from catkin/cmake/template/pkg.context.pc.in
-CATKIN_PACKAGE_PREFIX = ""
-PROJECT_PKG_CONFIG_INCLUDE_DIRS = "/home/nesc/balance_car_ws/src/balance_controller/include".split(';') if "/home/nesc/balance_car_ws/src/balance_controller/include" != "" else []
-PROJECT_CATKIN_DEPENDS = "roscpp;controller_interface;hardware_interface;pluginlib;realtime_tools;control_toolbox;sensor_msgs;geometry_msgs;nav_msgs;std_msgs;tf2;tf2_geometry_msgs;filters".replace(';', ' ')
-PKG_CONFIG_LIBRARIES_WITH_PREFIX = "-lbalance_controller".split(';') if "-lbalance_controller" != "" else []
-PROJECT_NAME = "balance_controller"
-PROJECT_SPACE_DIR = "/home/nesc/balance_car_ws/devel/.private/balance_controller"
-PROJECT_VERSION = "0.0.0"

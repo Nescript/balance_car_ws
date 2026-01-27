@@ -1,1 +1,0 @@
-/home/nesc/balance_car_ws/devel/.private/robot_pose_ekf/lib/pkgconfig/robot_pose_ekf.pc

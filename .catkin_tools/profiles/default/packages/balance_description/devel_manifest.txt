@@ -1,4 +1,0 @@
-balance_description
-/home/nesc/balance_car_ws/devel/.private/balance_description/share/balance_description/cmake/balance_descriptionConfig.cmake /home/nesc/balance_car_ws/devel/share/balance_description/cmake/balance_descriptionConfig.cmake
-/home/nesc/balance_car_ws/devel/.private/balance_description/share/balance_description/cmake/balance_descriptionConfig-version.cmake /home/nesc/balance_car_ws/devel/share/balance_description/cmake/balance_descriptionConfig-version.cmake
-/home/nesc/balance_car_ws/devel/.private/balance_description/lib/pkgconfig/balance_description.pc /home/nesc/balance_car_ws/devel/lib/pkgconfig/balance_description.pc
