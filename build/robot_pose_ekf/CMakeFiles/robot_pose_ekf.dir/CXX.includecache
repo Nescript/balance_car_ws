@@ -100,16 +100,6 @@ boost/thread/mutex.hpp
 fstream
 -
 
-/home/nesc/balance_car_ws/src/robot_pose_ekf/src/nonlinearanalyticconditionalgaussianodo.cpp
-robot_pose_ekf/nonlinearanalyticconditionalgaussianodo.h
--
-bfl/wrappers/rng/rng.h
--
-
-/home/nesc/balance_car_ws/src/robot_pose_ekf/src/odom_estimation.cpp
-robot_pose_ekf/odom_estimation.h
--
-
 /home/nesc/balance_car_ws/src/robot_pose_ekf/src/odom_estimation_node.cpp
 robot_pose_ekf/odom_estimation_node.h
 -

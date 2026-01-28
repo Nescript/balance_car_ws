@@ -8,5 +8,8 @@
 
 # modified environment variables
 export CMAKE_PREFIX_PATH="/home/nesc/balance_car_ws/devel/.private/robot_pose_ekf:$CMAKE_PREFIX_PATH"
+export LD_LIBRARY_PATH="/home/nesc/balance_car_ws/devel/.private/robot_pose_ekf/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="/home/nesc/balance_car_ws/devel/.private/robot_pose_ekf/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PWD='/home/nesc/balance_car_ws/build/robot_pose_ekf'
+export PYTHONPATH="/home/nesc/balance_car_ws/devel/.private/robot_pose_ekf/lib/python3/dist-packages:$PYTHONPATH"
 export ROS_PACKAGE_PATH="/home/nesc/balance_car_ws/src/robot_pose_ekf:$ROS_PACKAGE_PATH"
