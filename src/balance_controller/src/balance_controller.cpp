@@ -99,7 +99,7 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   if (time - last_info_time_ > ros::Duration(1.5)) {
     last_info_time_ = time;
     ROS_INFO("Pitch: %.4f, Target Pitch: %.4f, Base Effort: %.4f, Current Vel: %.4f, Target Vel: %.4f, Left Cmd: %.4f, Right Cmd: %.4f",
-           current_pitch_, target_pitch_, base_effort, filtered_linear_vel_, target_linear_vel_, left_total_cmd, right_total_cmd);
+           current_pitch_, target_pitch_, base_effort, raw_vel, final_target_vel, left_total_cmd, right_total_cmd);
   }
   std_msgs::Float64 pos_err_msg;
   std_msgs::Float64 vel_err_msg;

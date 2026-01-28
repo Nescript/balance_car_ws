@@ -3,16 +3,16 @@ balance_controller:
   type: "balance_controller/BalanceController" # 需替换为您代码中实现的实际插件类名
   # 平衡环 (内环)：输入为俯仰角误差 (rad)，输出为力矩 (Nm)
   balance_pid:
-    p: 5
+    p: 20
     i: 0
-    d: 0.3
+    d: 5
     i_clamp: 10.0
 
   # 速度环 (外环)：输入为速度误差 (m/s)，输出为目标俯仰角 (rad)
   # P 值不宜过大，否则会导致角度剧烈波动
   velocity_pid:
-    p: 0.07
-    i: 0.001
+    p: 0.18
+    i: 0.0
     d: 0.0
     i_clamp: 0.03
 
@@ -24,9 +24,9 @@ balance_controller:
     i_clamp: 1.0
 
   position_pid:
-    p: 0.5
+    p: 2
     i: 0.0
-    d: 0.01
+    d: 0.0
     i_clamp: 1.0
   # 物理参数：必须与 URDF 中的模型尺寸保持一致
   wheel_separation: 0.53
