@@ -1,8 +1,0 @@
-prefix=/home/nesc/balance_car_ws/install
-
-Name: balance_description
-Description: Description of balance_description
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: roscpp xacro
