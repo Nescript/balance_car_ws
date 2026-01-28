@@ -73,8 +73,8 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   
   double yaw_effort = yaw_pid_.computeCommand(target_angular_vel_ - current_angular_vel_, period);
   
-  left_wheel_joint_.setCommand(base_effort - yaw_effort);
-  right_wheel_joint_.setCommand(base_effort + yaw_effort);
+  left_wheel_joint_.setCommand(base_effort / 2 - yaw_effort);
+  right_wheel_joint_.setCommand(base_effort / 2 + yaw_effort);
   last_effort_ = base_effort;
 
   // 发布误差信息
