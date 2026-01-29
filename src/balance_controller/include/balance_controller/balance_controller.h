@@ -84,7 +84,17 @@ private:
   double wheel_radius_ = 0.1;      // 轮子半径
 
   double last_effort_ = 0.0; // 上一次控制输出
-  double k1, k2, k3, k4; // LQR 控制器增益
+  double k1, k2, k3, k4; // 刹车很稳的增益
+  double k1_selfup, k2_selfup, k3_selfup, k4_selfup; // 自起控制器增益
+  
+  enum ControlState {
+    STATE_NORMAL,
+    STATE_FALLEN,
+    STATE_SELF_UP
+  };
+  ControlState current_state_ = STATE_NORMAL;
+  
+  ros::Time self_up_start_time_; // 自起起始时间
   VelocityKalman vel_kf{0.01, 0.1, 1.0};
 };
 

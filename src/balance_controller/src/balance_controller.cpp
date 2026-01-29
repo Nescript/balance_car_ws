@@ -31,6 +31,18 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
   if (!controller_nh.getParam("k4", k4)) {
     ROS_WARN("Parameter 'k4' not set. Using default: %f", 0.0);
   }
+  if (!controller_nh.getParam("k1_selfup", k1_selfup)) {
+    ROS_WARN("Parameter 'k1_selfup' not set. Using default: %f", 0.0);
+  }
+  if (!controller_nh.getParam("k2_selfup", k2_selfup)) {
+    ROS_WARN("Parameter 'k2_selfup' not set. Using default: %f", 0.0);
+  }
+  if (!controller_nh.getParam("k3_selfup", k3_selfup)) {
+    ROS_WARN("Parameter 'k3_selfup' not set. Using default: %f", 0.0);
+  }
+  if (!controller_nh.getParam("k4_selfup", k4_selfup)) {
+    ROS_WARN("Parameter 'k4_selfup' not set. Using default: %f", 0.0);
+  }
 
   controller_nh.param("wheel_separation", wheel_separation_, 0.2);
   controller_nh.param("wheel_radius", wheel_radius_, 0.03);
@@ -53,6 +65,7 @@ void BalanceController::starting(const ros::Time& time) {
 
   current_pos_ = 0.0;
   target_pos_ = 0.0;
+  current_state_ = STATE_NORMAL;
 }
 
 void BalanceController::update(const ros::Time& time, const ros::Duration& period) {
@@ -71,12 +84,49 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
 
   double pitch_error = current_pitch_ - target_pitch_;
   double omega_error = current_omega_ - target_omega_;
-  double base_effort = -(k1 * pos_error + k2 * vel_error + k3 * pitch_error + k4 * omega_error);
+  
+  // 倒地状态机
+  switch (current_state_) {
+    case STATE_NORMAL:
+        if (std::abs(pitch_error) > 0.835) {
+            current_state_ = STATE_FALLEN;
+            ROS_INFO("Switched to FALLEN state");
+        }
+        break;
+
+    case STATE_FALLEN:
+        if (std::abs(omega_error) < 0.2 && std::abs(vel_error) < 0.01) {
+            current_state_ = STATE_SELF_UP;
+            self_up_start_time_ = time;
+            last_effort_ = 0.0;
+            ROS_INFO("Switched to SELF_UP state");
+        }
+        break;
+
+    case STATE_SELF_UP:
+        if ((time - self_up_start_time_).toSec() > 5.0) {
+            current_state_ = STATE_NORMAL;
+            ROS_INFO("Switched to NORMAL state");
+        }
+        break;
+  }
+
+  double base_effort = 0;
+  if (current_state_ == STATE_SELF_UP) {
+    base_effort = -(k1_selfup * pos_error + k2_selfup * vel_error + k3_selfup * pitch_error + k4_selfup * omega_error);
+  }
+  else if (current_state_ == STATE_NORMAL) {
+    base_effort = -(k1 * pos_error + k2 * vel_error + k3 * pitch_error + k4 * omega_error);
+  }
+  else {
+      base_effort = 0;
+  }
   
   double yaw_effort = yaw_pid_.computeCommand(target_angular_vel_ - current_angular_vel_, period);
   
   left_wheel_joint_.setCommand(base_effort / 2 - yaw_effort);
   right_wheel_joint_.setCommand(base_effort / 2 + yaw_effort);
+  // 倒地时候可以清空这个转向pid的输出
   last_effort_ = base_effort;
 
   // 发布误差信息

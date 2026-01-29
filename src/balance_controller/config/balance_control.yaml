@@ -31,10 +31,15 @@ balance_controller:
   # 物理参数：必须与 URDF 中的模型尺寸保持一致
   wheel_separation: 0.53
   wheel_radius: 0.1
-  k1: -21.3201
-  k2: -13.6354 
-  k3: -45.7376 
-  k4: -8.8629
+  k1: -22.3607
+  k2: -13.2873 
+  k3: -41.7910 
+  k4: -7.7452
+
+  k1_selfup: -2.2361
+  k2_selfup: -2.7418
+  k3_selfup: -17.9637 
+  k4_selfup: -4.3165
 # 同时也需要配置 joint_state_controller
 joint_state_controller:
   type: "joint_state_controller/JointStateController"
