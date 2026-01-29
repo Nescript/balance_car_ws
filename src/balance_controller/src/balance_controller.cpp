@@ -61,7 +61,9 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   double current_raw_linear_vel_ = (left_wheel_joint_.getVelocity() + right_wheel_joint_.getVelocity()) * wheel_radius_ / 2.0;
   current_linear_vel_ = vel_kf.update(current_raw_linear_vel_, dt, last_effort_);
 
-  current_pos_ += current_linear_vel_ * dt;
+
+  // current_pos_ += current_linear_vel_ * dt;
+  current_pos_ =(left_wheel_joint_.getPosition() + right_wheel_joint_.getPosition()) * wheel_radius_ / 2;
   target_pos_ += target_linear_vel_ * dt;
   
   double pos_error = current_pos_ - target_pos_; 
@@ -73,8 +75,8 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   
   double yaw_effort = yaw_pid_.computeCommand(target_angular_vel_ - current_angular_vel_, period);
   
-  left_wheel_joint_.setCommand(base_effort - yaw_effort);
-  right_wheel_joint_.setCommand(base_effort + yaw_effort);
+  left_wheel_joint_.setCommand(base_effort / 2 - yaw_effort);
+  right_wheel_joint_.setCommand(base_effort / 2 + yaw_effort);
   last_effort_ = base_effort;
 
   // 发布误差信息

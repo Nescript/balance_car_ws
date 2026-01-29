@@ -32,10 +32,10 @@ balance_controller:
   wheel_separation: 0.53
   wheel_radius: 0.1
 
-  k1: -4.4721
-  k2: -6.4059 
-  k3: -75.8045 
-  k4: -11.1631
+  k1: -3.1623
+  k2: -3.6655 
+  k3: -16.2874 
+  k4: -2.6515
 # 同时也需要配置 joint_state_controller
 joint_state_controller:
   type: "joint_state_controller/JointStateController"

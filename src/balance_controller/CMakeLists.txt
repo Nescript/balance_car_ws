@@ -36,3 +36,10 @@ add_library(${PROJECT_NAME}
   src/filters/filters.cpp
 )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+
+add_executable(keyboard_control_node src/keyboard_control_node.cpp)
+target_link_libraries(keyboard_control_node ${catkin_LIBRARIES})
+
+install(TARGETS keyboard_control_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
