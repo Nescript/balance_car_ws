@@ -19,29 +19,42 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
     ROS_ERROR("Failed to initialize yaw PID");
     return false;
   }
-  if (!controller_nh.getParam("k1", k1)) {
-    ROS_WARN("Parameter 'k1' not set. Using default: %f", 0.0);
+  std::vector<double> q_list, r_list;
+  if (controller_nh.getParam("lqr/q", q_list)) {
+    if (q_list.size() == 16) {
+      Q_ = Eigen::Map<Eigen::Matrix<double, 4, 4, Eigen::RowMajor>>(q_list.data());
+    } else {
+      ROS_ERROR("Q list size should be 16");
+      return false;
+    }
   }
-  if (!controller_nh.getParam("k2", k2)) {
-    ROS_WARN("Parameter 'k2' not set. Using default: %f", 0.0);
+
+  // 读取 R 矩阵
+  if (controller_nh.getParam("lqr/r", r_list)) {
+    if (r_list.size() == 1) {
+      R_(0, 0) = r_list[0];
+    } else {
+      ROS_ERROR("R list size should be 1");
+      return false;
+    }
   }
-  if (!controller_nh.getParam("k3", k3)) {
-    ROS_WARN("Parameter 'k3' not set. Using default: %f", 0.0);
+  if (controller_nh.getParam("lqr/q_selfup", q_list)) {
+    if (q_list.size() == 16) {
+      Q_selfup_ = Eigen::Map<Eigen::Matrix<double, 4, 4, Eigen::RowMajor>>(q_list.data());
+    } else {
+      ROS_ERROR("Q list size should be 16");
+      return false;
+    }
   }
-  if (!controller_nh.getParam("k4", k4)) {
-    ROS_WARN("Parameter 'k4' not set. Using default: %f", 0.0);
-  }
-  if (!controller_nh.getParam("k1_selfup", k1_selfup)) {
-    ROS_WARN("Parameter 'k1_selfup' not set. Using default: %f", 0.0);
-  }
-  if (!controller_nh.getParam("k2_selfup", k2_selfup)) {
-    ROS_WARN("Parameter 'k2_selfup' not set. Using default: %f", 0.0);
-  }
-  if (!controller_nh.getParam("k3_selfup", k3_selfup)) {
-    ROS_WARN("Parameter 'k3_selfup' not set. Using default: %f", 0.0);
-  }
-  if (!controller_nh.getParam("k4_selfup", k4_selfup)) {
-    ROS_WARN("Parameter 'k4_selfup' not set. Using default: %f", 0.0);
+
+  // 读取 R 矩阵
+  if (controller_nh.getParam("lqr/r_selfup", r_list)) {
+    if (r_list.size() == 1) {
+      R_selfup_(0, 0) = r_list[0];
+    } else {
+      ROS_ERROR("R list size should be 1");
+      return false;
+    }
   }
 
   controller_nh.param("wheel_separation", wheel_separation_, 0.2);
@@ -55,6 +68,31 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
   imu_sub_ = root_nh.subscribe("imu", 1, &BalanceController::imuCallback, this);
   cmd_vel_sub_ = root_nh.subscribe("cmd_vel", 1, &BalanceController::cmdVelCallback, this);
 
+  A_ << 0.0, 1.0, 0.0, 0.0,
+        0.0, -9.20057713e-03, -3.72864924e+00, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+        0.0, -3.11546368e-02, 4.58440481e+01, 0.0;
+
+  B_ << 0.0,
+        4.60028856,
+        0.0,
+       -15.5773184;
+  Lqr<double> lqr(A_, B_, Q_, R_);
+  Lqr<double> lqr_selfup(A_, B_, Q_selfup_, R_selfup_);
+  if (lqr.computeK()) {
+    K_ = lqr.getK();
+    ROS_INFO_STREAM("LQR K: " << K_);
+  } else {
+    ROS_ERROR("Failed to compute LQR K");
+    return false;
+  }
+  if (lqr_selfup.computeK()) {
+    K_selfup_ = lqr_selfup.getK();
+    ROS_INFO_STREAM("LQR K Self-up: " << K_selfup_);
+  } else {
+    ROS_ERROR("Failed to compute LQR K selfup");
+    return false;
+  }
   return true;
 }
 
@@ -62,6 +100,7 @@ void BalanceController::starting(const ros::Time& time) {
   target_linear_vel_ = 0.0;
   target_angular_vel_ = 0.0;
   target_pitch_ = 0.0;
+  target_omega_ = 0.0;
 
   current_pos_ = 0.0;
   target_pos_ = 0.0;
@@ -70,12 +109,10 @@ void BalanceController::starting(const ros::Time& time) {
 
 void BalanceController::update(const ros::Time& time, const ros::Duration& period) {
   double dt = period.toSec();
-  
+  Vec4<double> x_error;
   double current_raw_linear_vel_ = (left_wheel_joint_.getVelocity() + right_wheel_joint_.getVelocity()) * wheel_radius_ / 2.0;
   current_linear_vel_ = vel_kf.update(current_raw_linear_vel_, dt, last_effort_);
 
-
-  // current_pos_ += current_linear_vel_ * dt;
   current_pos_ =(left_wheel_joint_.getPosition() + right_wheel_joint_.getPosition()) * wheel_radius_ / 2;
   target_pos_ += target_linear_vel_ * dt;
   
@@ -84,7 +121,7 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
 
   double pitch_error = current_pitch_ - target_pitch_;
   double omega_error = current_omega_ - target_omega_;
-  
+  x_error << pos_error, vel_error, pitch_error, omega_error; 
   // 倒地状态机
   switch (current_state_) {
     case STATE_NORMAL:
@@ -113,10 +150,12 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
 
   double base_effort = 0;
   if (current_state_ == STATE_SELF_UP) {
-    base_effort = -(k1_selfup * pos_error + k2_selfup * vel_error + k3_selfup * pitch_error + k4_selfup * omega_error);
+    // base_effort = -(k1_selfup * pos_error + k2_selfup * vel_error + k3_selfup * pitch_error + k4_selfup * omega_error);
+    base_effort = -(K_selfup_ * x_error)(0, 0);
   }
   else if (current_state_ == STATE_NORMAL) {
-    base_effort = -(k1 * pos_error + k2 * vel_error + k3 * pitch_error + k4 * omega_error);
+    // base_effort = -(k1 * pos_error + k2 * vel_error + k3 * pitch_error + k4 * omega_error);
+    base_effort = -(K_ * x_error)(0, 0);
   }
   else {
       base_effort = 0;

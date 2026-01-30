@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(balance_controller)
 
+# 设置 C++ 标准
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   controller_interface
@@ -17,6 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
   filters
 )
 
+# 显式查找 Eigen3
+find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
 
 catkin_package(
@@ -29,6 +35,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME}

@@ -13,6 +13,9 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <std_msgs/Float64.h>
 #include "balance_controller/filters/filters.h"
+#include "balance_controller/lqr.h"
+#include "balance_controller/eigen_types.h"
+
 
 namespace balance_controller {
 
@@ -67,7 +70,15 @@ private:
   void cmdVelCallback(const geometry_msgs::TwistConstPtr& msg);
 
   control_toolbox::Pid yaw_pid_;
-
+  
+  Mat4<double> A_;
+  Vec4<double> B_;
+  Mat4<double> Q_;
+  Eigen::Matrix<double, 1, 1> R_;
+  Mat4<double> Q_selfup_;
+  Eigen::Matrix<double, 1, 1> R_selfup_;
+  Eigen::MatrixXd K_;
+  Eigen::MatrixXd K_selfup_;
   double current_pitch_ = 0.0; // 当前角度
   double current_pos_ = 0.0; // 当前位移
   double current_linear_vel_ = 0.0; // 当前速度
