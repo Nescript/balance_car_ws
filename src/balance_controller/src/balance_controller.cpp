@@ -81,14 +81,14 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
   cmd_vel_sub_ = root_nh.subscribe("cmd_vel", 1, &BalanceController::cmdVelCallback, this);
 
   A_ << 0.0, 1.0, 0.0, 0.0,
-        0.0, -5.61330625e-03, -1.20330686e+00, 0.0,
+        0.0, -5.42416193e-03, -8.32205709e-01, 0.0,
         0.0, 0.0, 0.0, 1.0,
-        0.0, -1.16487417e-02, 2.28548311e+01, 0.0;
+        0.0, -9.75084900e-03, 1.91311657e+01, 0.0;
 
   B_ << 0.0,
-        2.80665312,
+        2.71208097,
         0.0,
-       -5.82437083;
+       -4.8754245;
   Lqr<double> lqr(A_, B_, Q_, R_);
   Lqr<double> lqr_selfup(A_, B_, Q_selfup_, R_selfup_);
   if (lqr.computeK()) {
