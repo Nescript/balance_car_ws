@@ -1,9 +1,5 @@
 {
-  "ros.distro": "noetic",
-<<<<<<< HEAD
-  "ROS2.distro": "noetic",
-=======
->>>>>>> 3a2f7059caf36745e80b3c16fb68c83f6f96719f
+  "ros.distro": "noetic"
   "python.autoComplete.extraPaths": [
     "/home/nesc/balance_car_ws/devel/lib/python3/dist-packages",
     "/opt/ros/noetic/lib/python3/dist-packages"

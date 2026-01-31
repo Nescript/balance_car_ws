@@ -3,6 +3,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <boost/concept_check.hpp>
+#include "balance_controller/filters/math_utilities.h"
 
 namespace balance_controller {
 
@@ -11,6 +12,8 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
   try {
     left_wheel_joint_ = effort_joint_interface->getHandle("left_wheel_joint");
     right_wheel_joint_ = effort_joint_interface->getHandle("right_wheel_joint");
+    gimbal_pitch_joint_ = effort_joint_interface->getHandle("muzzle_joint");
+    gimbal_yaw_joint_ = effort_joint_interface->getHandle("gimbal_joint");
   } catch (const hardware_interface::HardwareInterfaceException& e) {
     ROS_ERROR("Could not get joint handles: %s", e.what());
     return false;
@@ -19,6 +22,15 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
     ROS_ERROR("Failed to initialize yaw PID");
     return false;
   }
+  if (!gimbal_pitch_pid_.init(ros::NodeHandle(controller_nh, "gimbal_pitch_pid"))) {
+    ROS_ERROR("Failed to initialize gimbal pitch PID");
+    return false;
+  }
+  if (!gimbal_yaw_pid_.init(ros::NodeHandle(controller_nh, "gimbal_yaw_pid"))) {
+    ROS_ERROR("Failed to initialize gimbal yaw PID");
+    return false;
+  }
+  gimbal_imu_sub_ = root_nh.subscribe("gimbal_imu", 1, &BalanceController::gimbalImuCallback, this);
   std::vector<double> q_list, r_list;
   if (controller_nh.getParam("lqr/q", q_list)) {
     if (q_list.size() == 16) {
@@ -69,14 +81,14 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
   cmd_vel_sub_ = root_nh.subscribe("cmd_vel", 1, &BalanceController::cmdVelCallback, this);
 
   A_ << 0.0, 1.0, 0.0, 0.0,
-        0.0, -9.20057713e-03, -3.72864924e+00, 0.0,
+        0.0, -5.61330625e-03, -1.20330686e+00, 0.0,
         0.0, 0.0, 0.0, 1.0,
-        0.0, -3.11546368e-02, 4.58440481e+01, 0.0;
+        0.0, -1.16487417e-02, 2.28548311e+01, 0.0;
 
   B_ << 0.0,
-        4.60028856,
+        2.80665312,
         0.0,
-       -15.5773184;
+       -5.82437083;
   Lqr<double> lqr(A_, B_, Q_, R_);
   Lqr<double> lqr_selfup(A_, B_, Q_selfup_, R_selfup_);
   if (lqr.computeK()) {
@@ -99,7 +111,7 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
 void BalanceController::starting(const ros::Time& time) {
   target_linear_vel_ = 0.0;
   target_angular_vel_ = 0.0;
-  target_pitch_ = 0.0;
+  target_pitch_ = -0.1415;
   target_omega_ = 0.0;
 
   current_pos_ = 0.0;
@@ -122,6 +134,12 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   double pitch_error = current_pitch_ - target_pitch_;
   double omega_error = current_omega_ - target_omega_;
   x_error << pos_error, vel_error, pitch_error, omega_error; 
+    
+  double gimbal_yaw_effort = gimbal_yaw_pid_.computeCommand(gimbal_target_angular_vel_ - gimbal_current_angular_vel_, period);
+  // to do 云台yaw追速度指令，底盘yaw追imu角度
+  gimbal_yaw_joint_.setCommand(gimbal_yaw_effort);
+  double yaw_effort = yaw_pid_.computeCommand(angularMinus(gimbal_current_yaw_, chassis_current_yaw_), period);
+
   // 倒地状态机
   switch (current_state_) {
     case STATE_NORMAL:
@@ -141,7 +159,7 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
         break;
 
     case STATE_SELF_UP:
-        if ((time - self_up_start_time_).toSec() > 5.0) {
+        if ((time - self_up_start_time_).toSec() > 6.0) {
             current_state_ = STATE_NORMAL;
             ROS_INFO("Switched to NORMAL state");
         }
@@ -152,6 +170,7 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   if (current_state_ == STATE_SELF_UP) {
     // base_effort = -(k1_selfup * pos_error + k2_selfup * vel_error + k3_selfup * pitch_error + k4_selfup * omega_error);
     base_effort = -(K_selfup_ * x_error)(0, 0);
+    yaw_effort = 0; // 自起时不进行yaw控制
   }
   else if (current_state_ == STATE_NORMAL) {
     // base_effort = -(k1 * pos_error + k2 * vel_error + k3 * pitch_error + k4 * omega_error);
@@ -159,14 +178,16 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   }
   else {
       base_effort = 0;
+      yaw_effort = 0;
   }
-  
-  double yaw_effort = yaw_pid_.computeCommand(target_angular_vel_ - current_angular_vel_, period);
-  
+
   left_wheel_joint_.setCommand(base_effort / 2 - yaw_effort);
   right_wheel_joint_.setCommand(base_effort / 2 + yaw_effort);
   // 倒地时候可以清空这个转向pid的输出
   last_effort_ = base_effort;
+
+  double gimbal_pitch_error = gimbal_target_pitch_ - gimbal_current_pitch_;
+  gimbal_pitch_joint_.setCommand(gimbal_pitch_pid_.computeCommand(gimbal_pitch_error, period));
 
   // 发布误差信息
   std_msgs::Float64 pos_error_msg;
@@ -197,15 +218,24 @@ void BalanceController::imuCallback(const sensor_msgs::ImuConstPtr& msg) {
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
   current_pitch_ = pitch;
+  chassis_current_yaw_ = yaw;
   current_omega_ = msg->angular_velocity.y;
   current_angular_vel_ = msg->angular_velocity.z;
 }
 
 void BalanceController::cmdVelCallback(const geometry_msgs::TwistConstPtr& msg) {
   target_linear_vel_ = msg->linear.x;
-  target_angular_vel_ = msg->angular.z;
+  gimbal_target_angular_vel_ = msg->angular.z;
 }
 
+void BalanceController::gimbalImuCallback(const sensor_msgs::ImuConstPtr& msg) {
+  tf2::Quaternion q(msg->orientation.x, msg->orientation.y, msg->orientation.z, msg->orientation.w);
+  tf2::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  gimbal_current_pitch_ = pitch;
+  gimbal_current_yaw_ = yaw;
+  gimbal_current_angular_vel_ = msg->angular_velocity.z;
+}
 } // namespace balance_controller
-
 PLUGINLIB_EXPORT_CLASS(balance_controller::BalanceController, controller_interface::ControllerBase)

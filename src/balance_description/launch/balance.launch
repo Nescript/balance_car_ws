@@ -11,7 +11,7 @@
   
   <!-- 4. 启动控制器管理器 -->
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
-        output="screen" args="joint_state_controller left_wheel_effort_controller right_wheel_effort_controller"/>
+        output="screen" args="joint_state_controller left_wheel_effort_controller right_wheel_effort_controller --stop"/>
   <!-- 建议同时启动 robot_state_publisher 以便在 Rviz 查看 -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 </launch>

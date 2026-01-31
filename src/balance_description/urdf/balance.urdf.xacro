@@ -7,10 +7,10 @@
     <xacro:property name="height" value="0.061"/>
     <xacro:property name="wheel_length" value="0.03"/> <!-- Link 1 -->
     <xacro:property name="wheel_radius" value="0.1"/> <!-- Link 2 -->
-    <xacro:property name="gimbal_height" value="0.03"/>
-    <xacro:property name="gimbal_radius" value="0.02"/>
-    <xacro:property name="muzzle_height" value="0.05"/>
-    <xacro:property name="muzzle_radius" value="0.01"/>
+    <xacro:property name="gimbal_height" value="0.12"/>
+    <xacro:property name="gimbal_radius" value="0.06"/>
+    <xacro:property name="muzzle_height" value="0.4"/>
+    <xacro:property name="muzzle_radius" value="0.03"/>
 
     <material name="orange">
       <color rgba="${255/255} ${108/255} ${10/255} 1.0"/>
@@ -44,8 +44,8 @@
         <material name="blue"/>
       </visual>
       <inertial>
-        <!--质心位置在此修改 0.001 0.0 0.0-->
-        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <!-- 质心偏移计算结果为 -0.015 以配平 muzzle 的 0.03 偏移 -->
+        <origin xyz="-0.015 0.0 0.0" rpy="0.0 0.0 0.0"/>
         <mass value="${mass}"/>
         <inertia ixx="0.04229" ixy="0.0" ixz="0.0" iyy="0.04229" iyz="0.0" izz="0.08333"/>
       </inertial>
@@ -74,6 +74,25 @@
     <joint name="imu_joint" type="fixed">
       <parent link="base_link"/>
       <child link="imu_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="gimbal_imu_link">
+      <visual>
+        <geometry>
+          <box size="0.01 0.01 0.01"/>
+        </geometry>
+      </visual>
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
+      </inertial>
+    </link>
+
+    <joint name="gimbal_imu_joint" type="fixed">
+      <parent link="muzzle_link"/>
+      <child link="gimbal_imu_link"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
@@ -113,6 +132,7 @@
           <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         </joint>
         <actuator name="${prefix}_wheel_motor">
+          <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
           <mechanicalReduction>1</mechanicalReduction>
         </actuator>
       </transmission>
@@ -121,6 +141,107 @@
     <xacro:wheel prefix="left" num="0" reflect="1"/>
     <xacro:wheel prefix="right" num="1" reflect="-1"/>
     
+    <link name="gimbal_link">
+      <inertial>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <mass value="0.2"/>
+        <inertia ixx="0.00042" ixy="0.0" ixz="0.0" iyy="0.00042" iyz="0.0" izz="0.00036"/>
+      </inertial>
+      <visual name="">
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <geometry>
+          <cylinder radius="${gimbal_radius}" length="${gimbal_height}"/>
+        </geometry>
+        <material name="white"/>
+      </visual>
+      <collision>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <geometry>
+          <cylinder radius="${gimbal_radius}" length="${gimbal_height}"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="gimbal_joint" type="continuous"> <!-- 修正：修改 joint 名称 -->
+      <parent link="base_link" />
+      <child link="gimbal_link" />
+      <origin xyz="0 0 ${height / 2 + gimbal_height / 2}" rpy="0 0 0" />
+      <axis xyz="0 0 1" />
+      <limit lower="-1.0" upper="1.0" effort="3.07" velocity="70" />
+    </joint>
+    
+    <transmission name="gimbal_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="gimbal_joint">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="gimbal_motor">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
+    <link name="muzzle_link">
+      <inertial>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> <!-- 修正：质心偏移 -->
+        <mass value="0.8"/>
+        <inertia ixx="0.00036" ixy="0.0" ixz="0.0" iyy="0.01085" iyz="0.0" izz="0.0079"/>
+      </inertial>
+      <visual>
+        <origin xyz="${muzzle_height/10} 0.0 0.0" rpy="0 ${pi/2} 0"/> <!-- 修正：让枪管从关节处延伸 -->
+        <geometry>
+          <cylinder radius="${muzzle_radius}" length="${muzzle_height}"/>
+        </geometry>
+        <material name="white"/>
+      </visual>
+      <collision>
+        <origin xyz="${muzzle_height/2} 0.0 0.0" rpy="0 ${pi/2} 0"/>
+        <geometry>
+          <cylinder radius="${muzzle_radius}" length="${muzzle_height}"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="muzzle_joint" type="revolute">
+      <parent link="gimbal_link" />
+      <child link="muzzle_link" />
+      <!-- 修正：Z 轴只需考虑相对于云台中心的高度，通常为 0 或云台顶部 -->
+      <origin xyz="0.0 0 0.15" rpy="0 0 0" /> 
+      <axis xyz="0 1 0" />
+      <limit lower="-0.5" upper="0.24" effort="3" velocity="70" />
+    </joint>
+
+    <transmission name="muzzle_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="muzzle_joint">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="muzzle_motor">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
+    <gazebo reference="gimbal_imu_link">
+      <gravity>true</gravity>
+      <sensor name="muzzle_imu_sensor" type="imu">
+        <always_on>true</always_on>
+        <update_rate>1000</update_rate>
+        <visualize>true</visualize>
+        <imu/>
+        <plugin filename="libgazebo_ros_imu_sensor.so" name="muzzle_imu_plugin">
+          <topicName>gimbal_imu</topicName>
+          <bodyName>gimbal_imu_link</bodyName>
+          <updateRateHZ>100.0</updateRateHZ>
+          <gaussianNoise>0.0</gaussianNoise>
+          <xyzOffset>0 0 0</xyzOffset>
+          <rpyOffset>0 0 0</rpyOffset>
+          <frameName>muzzle_link</frameName>
+          <initialOrientationAsReference>false</initialOrientationAsReference>
+        </plugin>
+      </sensor>
+    </gazebo>
+
     <gazebo reference="imu_link">
       <gravity>true</gravity>
       <sensor name="imu_sensor" type="imu">
@@ -140,6 +261,8 @@
         </plugin>
       </sensor>
     </gazebo>
+
+
 
 
     <gazebo>

@@ -20,7 +20,19 @@ balance_controller:
   yaw_pid:
     p: 0.5
     i: 0.0
-    d: 0.01
+    d: 100
+    i_clamp: 1.0
+
+  gimbal_pitch_pid:
+    p: 5
+    i: 0.0
+    d: 100
+    i_clamp: 1.0
+
+  gimbal_yaw_pid:
+    p: 1
+    i: 0.0
+    d: 10
     i_clamp: 1.0
 
   position_pid:
@@ -42,15 +54,20 @@ balance_controller:
   k4_selfup: -4.3165
   lqr:
     q_selfup: [1.0, 0.0, 0.0, 0.0,
+               0.0, 0.16, 0.0, 0.0,
+               0.0, 0.0, 1.3759, 0.0,
+               0.0, 0.0, 0.0, 2.0]
+    r_selfup: [0.11]
+#    q: [1.0, 0.0, 0.0, 0.0,
+#               0.0, 0.16, 0.0, 0.0,
+#               0.0, 0.0, 1.3759, 0.0,
+#               0.0, 0.0, 0.0, 2.0]
+#    r: [0.11]
+    q: [1, 0.0, 0.0, 0.0,
         0.0, 0.16, 0.0, 0.0,
-        0.0, 0.0, 1.3759, 0.0,
+        0.0, 0.0, 3.3759, 0.0,
         0.0, 0.0, 0.0, 2.0]
-    r_selfup: [0.2]
-    q: [100, 0.0, 0.0, 0.0,
-        0.0, 0.16, 0.0, 0.0,
-        0.0, 0.0, 3.64756, 0.0,
-        0.0, 0.0, 0.0, 2.0]
-    r: [0.2]
+    r: [0.11]
 # 同时也需要配置 joint_state_controller
 joint_state_controller:
   type: "joint_state_controller/JointStateController"

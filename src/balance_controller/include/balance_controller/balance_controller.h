@@ -8,11 +8,9 @@
 #include <geometry_msgs/Twist.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
-#include <filters/realtime_circular_buffer.h>
 #include <nav_msgs/Odometry.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <std_msgs/Float64.h>
-#include "balance_controller/filters/filters.h"
 #include "balance_controller/lqr.h"
 #include "balance_controller/eigen_types.h"
 
@@ -57,8 +55,9 @@ public:
   void stopping(const ros::Time& time) override;
 
 private:
-  hardware_interface::JointHandle left_wheel_joint_, right_wheel_joint_;
+  hardware_interface::JointHandle left_wheel_joint_, right_wheel_joint_, gimbal_pitch_joint_, gimbal_yaw_joint_;
   ros::Subscriber imu_sub_;
+  ros::Subscriber gimbal_imu_sub_;
   ros::Subscriber cmd_vel_sub_;
   ros::Publisher pos_error_pub_;
   ros::Publisher vel_error_pub_;
@@ -67,9 +66,12 @@ private:
   ros::Publisher last_effort_pub_;
 
   void imuCallback(const sensor_msgs::ImuConstPtr& msg);
+  void gimbalImuCallback(const sensor_msgs::ImuConstPtr& msg);
   void cmdVelCallback(const geometry_msgs::TwistConstPtr& msg);
 
   control_toolbox::Pid yaw_pid_;
+  control_toolbox::Pid gimbal_pitch_pid_;
+  control_toolbox::Pid gimbal_yaw_pid_;
   
   Mat4<double> A_;
   Vec4<double> B_;
@@ -85,12 +87,19 @@ private:
   double current_angular_vel_ = 0.0; // 当前角速度
   double current_omega_ = 0.0; // 当前角速度
 
-  double target_pitch_ = 0.0;
+  double target_pitch_ = -0.1415;
   double target_pos_ = 0.0;
   double target_linear_vel_ = 0.0;
   double target_angular_vel_ = 0.0;
   double target_omega_ = 0.0;
 
+  double gimbal_target_pitch_ = 0.0;
+  double gimbal_current_pitch_ = 0.0;
+  double gimbal_target_angular_vel_ = 0.0;
+  double gimbal_current_angular_vel_ = 0.0;
+  double gimbal_current_yaw_ = 0.0;
+
+  double chassis_current_yaw_ = 0.0;
   double wheel_separation_ = 0.53; // 轮距
   double wheel_radius_ = 0.1;      // 轮子半径
 

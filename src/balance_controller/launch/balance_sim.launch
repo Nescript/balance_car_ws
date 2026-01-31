@@ -17,7 +17,7 @@
   <!-- 3. 启动 Controller Manager -->
   <!-- 注意：这里同时加载 joint_state_controller 以便查看关节状态 -->
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
-        output="screen" args="joint_state_controller balance_controller"/>
+        output="screen" args="joint_state_controller balance_controller  --stopped "/>
 
   <!-- 4. 状态发布器 -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
