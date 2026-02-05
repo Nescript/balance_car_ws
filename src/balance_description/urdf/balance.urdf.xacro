@@ -1,31 +1,84 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="diffbot">
-    <!-- Constants for robot dimensions -->
-    <xacro:property name="mass" value="2.0"/> <!-- 增加质量 -->
-    <xacro:property name="width" value="0.5"/> <!-- Square dimensions (widthxwidth) of beams -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="balance_bot">
+    
+    <!-- =================================================================================== -->
+    <!-- Properties & Constants -->
+    <!-- =================================================================================== -->
+    <xacro:property name="PI" value="3.1415926535897931"/>
+    
+    <!-- Robot Dimensions -->
+    <xacro:property name="mass" value="2.0"/>
+    <xacro:property name="width" value="0.5"/>
     <xacro:property name="length" value="0.5"/>
     <xacro:property name="height" value="0.061"/>
-    <xacro:property name="wheel_length" value="0.03"/> <!-- Link 1 -->
-    <xacro:property name="wheel_radius" value="0.1"/> <!-- Link 2 -->
+    
+    <!-- Wheel Properties -->
+    <xacro:property name="wheel_length" value="0.03"/>
+    <xacro:property name="wheel_radius" value="0.1"/>
+    <xacro:property name="wheel_mass" value="0.5"/>
+    
+    <!-- Gimbal Properties -->
     <xacro:property name="gimbal_height" value="0.12"/>
     <xacro:property name="gimbal_radius" value="0.06"/>
     <xacro:property name="muzzle_height" value="0.4"/>
     <xacro:property name="muzzle_radius" value="0.03"/>
 
+    <!-- Leg Properties -->
+    <xacro:property name="leg_width" value="0.05"/>
+    <xacro:property name="leg_thickness" value="0.01"/>
+    <xacro:property name="thigh_length" value="0.4"/>
+    <xacro:property name="shank_length" value="0.5"/>
+    <xacro:property name="leg_mass" value="0.1"/>
+
+    <!-- =================================================================================== -->
+    <!-- Macros -->
+    <!-- =================================================================================== -->
+    
+    <!-- Inertia Macros -->
+    <xacro:macro name="box_inertial" params="m w h d">
+      <inertial>
+        <mass value="${m}"/>
+        <inertia ixx="${m/12 * (h*h + d*d)}" ixy="0.0" ixz="0.0" 
+                 iyy="${m/12 * (w*w + d*d)}" iyz="0.0" 
+                 izz="${m/12 * (w*w + h*h)}"/>
+      </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="cylinder_inertial" params="m r h">
+      <inertial>
+        <mass value="${m}"/>
+        <inertia ixx="${m/12 * (3*r*r + h*h)}" ixy="0.0" ixz="0.0" 
+                 iyy="${m/12 * (3*r*r + h*h)}" iyz="0.0" 
+                 izz="${m/2 * r*r}"/>
+      </inertial>
+    </xacro:macro>
+    
+    <xacro:macro name="sphere_inertial" params="m r">
+        <inertial>
+            <mass value="${m}"/>
+            <inertia ixx="${2/5 * m * r * r}" ixy="0.0" ixz="0.0" 
+                     iyy="${2/5 * m * r * r}" iyz="0.0" 
+                     izz="${2/5 * m * r * r}"/>
+        </inertial>
+    </xacro:macro>
+
+    <!-- Materials -->
     <material name="orange">
       <color rgba="${255/255} ${108/255} ${10/255} 1.0"/>
     </material>
     <material name="black">
       <color rgba="0.0 0.0 0.0 1.0"/>
     </material>
-
     <material name="blue">
       <color rgba="0 0 0.8 1"/>
     </material>
-
     <material name="white">
       <color rgba="1 1 1 1"/>
     </material>
+
+    <!-- =================================================================================== -->
+    <!-- Base & Body -->
+    <!-- =================================================================================== -->
 
     <link name="base_footprint"/>
 
@@ -36,191 +89,333 @@
     </joint>
 
     <link name="base_link">
-      <visual>
-        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-        <geometry>
-          <box size="${length} ${width} ${height}"/>
-        </geometry>
-        <material name="blue"/>
-      </visual>
-      <inertial>
-        <!-- 质心偏移计算结果为 -0.015 以配平 muzzle 的 0.03 偏移 -->
-        <origin xyz="-0.015 0.0 0.0" rpy="0.0 0.0 0.0"/>
-        <mass value="${mass}"/>
-        <inertia ixx="0.04229" ixy="0.0" ixz="0.0" iyy="0.04229" iyz="0.0" izz="0.08333"/>
-      </inertial>
-      <collision>
-        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-        <geometry>
-          <box size="${length} ${width} ${height}"/>
-        </geometry>
-      </collision>
+        <visual>
+            <geometry>
+                <box size="${length} ${width} ${height}"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="${length} ${width} ${height}"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <origin xyz="-0.015 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <mass value="${mass}"/>
+            <inertia ixx="0.04229" ixy="0.0" ixz="0.0" iyy="0.04229" iyz="0.0" izz="0.08333"/>
+        </inertial>
     </link>
 
-    <!-- IMU Link -->
+    <!-- Sensors: IMU -->
     <link name="imu_link">
-      <visual>
-        <geometry>
-          <box size="0.01 0.01 0.01"/>
-        </geometry>
-      </visual>
-      <inertial>
-        <mass value="0.001"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
-      </inertial>
+        <visual>
+            <geometry><box size="0.01 0.01 0.01"/></geometry>
+        </visual>
+        <xacro:box_inertial m="0.001" w="0.01" h="0.01" d="0.01"/>
     </link>
 
     <joint name="imu_joint" type="fixed">
-      <parent link="base_link"/>
-      <child link="imu_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+        <parent link="base_link"/>
+        <child link="imu_link"/>
     </joint>
 
+    <!-- =================================================================================== -->
+    <!-- Gimbal System -->
+    <!-- =================================================================================== -->
+    
+    <link name="gimbal_link">
+        <visual>
+            <geometry><cylinder radius="${gimbal_radius}" length="${gimbal_height}"/></geometry>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <geometry><cylinder radius="${gimbal_radius}" length="${gimbal_height}"/></geometry>
+        </collision>
+        <xacro:cylinder_inertial m="0.2" r="${gimbal_radius}" h="${gimbal_height}"/>
+    </link>
+
+    <joint name="gimbal_joint" type="continuous">
+        <parent link="base_link" />
+        <child link="gimbal_link" />
+        <origin xyz="0 0 ${height / 2 + gimbal_height / 2}" rpy="0 0 0" />
+        <axis xyz="0 0 1" />
+        <limit lower="-1.0" upper="1.0" effort="3.07" velocity="70" />
+    </joint>
+
+    <transmission name="gimbal_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="gimbal_joint">
+            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="gimbal_motor">
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+    </transmission>
+
+    <link name="muzzle_link">
+        <visual>
+            <origin xyz="${muzzle_height/10} 0.0 0.0" rpy="0 ${PI/2} 0"/>
+            <geometry><cylinder radius="${muzzle_radius}" length="${muzzle_height}"/></geometry>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <origin xyz="${muzzle_height/2} 0.0 0.0" rpy="0 ${PI/2} 0"/>
+            <geometry><cylinder radius="${muzzle_radius}" length="${muzzle_height}"/></geometry>
+        </collision>
+        <inertial>
+            <mass value="0.8"/>
+            <origin xyz="0 0 0"/>
+            <inertia ixx="0.00036" ixy="0.0" ixz="0.0" iyy="0.01085" iyz="0.0" izz="0.0079"/>
+        </inertial>
+    </link>
+
+    <joint name="muzzle_joint" type="revolute">
+        <parent link="gimbal_link" />
+        <child link="muzzle_link" />
+        <origin xyz="0.0 0 0.15" rpy="0 0 0" /> 
+        <axis xyz="0 1 0" />
+        <limit lower="-0.5" upper="0.24" effort="3" velocity="70" />
+    </joint>
+    
     <link name="gimbal_imu_link">
       <visual>
-        <geometry>
-          <box size="0.01 0.01 0.01"/>
-        </geometry>
+        <geometry><box size="0.01 0.01 0.01"/></geometry>
       </visual>
-      <inertial>
-        <mass value="0.001"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
-      </inertial>
+      <xacro:box_inertial m="0.001" w="0.01" h="0.01" d="0.01"/>
     </link>
 
     <joint name="gimbal_imu_joint" type="fixed">
       <parent link="muzzle_link"/>
       <child link="gimbal_imu_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint>
-
-    <xacro:macro name="wheel" params="prefix reflect num">
-      <link name="${prefix}_wheel">
-        <inertial>
-          <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-          <mass value="0.5"/> <!-- 增加轮子质量 -->
-          <inertia ixx="0.00129" ixy="0.0" ixz="0.0" iyy="0.00129" iyz="0.0" izz="0.0025"/>
-        </inertial>
-        <visual>
-          <geometry>
-            <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
-          </geometry>
-          <material name="white"/>
-        </visual>
-        <collision>
-          <geometry>
-            <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
-          </geometry>
-        </collision>
-      </link>
-
-      <joint name="${prefix}_wheel_joint" type="continuous">
-        <origin xyz="0.0 ${reflect*(width/2+wheel_length/2)} ${-height*3}" rpy="${-pi/2} 0.0 0.0"/>
-        <parent link="base_link"/>
-        <child link="${prefix}_wheel"/>
-        <axis xyz="0.0 0.0 1"/>
-        <limit effort="3.07" velocity="73.7" upper_limit="1e10" lower_limit="-1e10"/>
-        <!-- 添加动力学属性：damping 为粘性阻尼，friction 为静摩擦力 -->
-        <dynamics damping="0.01" friction="0.01"/>
-      </joint>
-
-      <transmission name="${prefix}_wheel_trans">
-        <type>transmission_interface/SimpleTransmission</type>
-        <joint name="${prefix}_wheel_joint">
-          <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-        </joint>
-        <actuator name="${prefix}_wheel_motor">
-          <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-          <mechanicalReduction>1</mechanicalReduction>
-        </actuator>
-      </transmission>
-    </xacro:macro>
-
-    <xacro:wheel prefix="left" num="0" reflect="1"/>
-    <xacro:wheel prefix="right" num="1" reflect="-1"/>
-    
-    <link name="gimbal_link">
-      <inertial>
-        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-        <mass value="0.2"/>
-        <inertia ixx="0.00042" ixy="0.0" ixz="0.0" iyy="0.00042" iyz="0.0" izz="0.00036"/>
-      </inertial>
-      <visual name="">
-        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-        <geometry>
-          <cylinder radius="${gimbal_radius}" length="${gimbal_height}"/>
-        </geometry>
-        <material name="white"/>
-      </visual>
-      <collision>
-        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-        <geometry>
-          <cylinder radius="${gimbal_radius}" length="${gimbal_height}"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <joint name="gimbal_joint" type="continuous"> <!-- 修正：修改 joint 名称 -->
-      <parent link="base_link" />
-      <child link="gimbal_link" />
-      <origin xyz="0 0 ${height / 2 + gimbal_height / 2}" rpy="0 0 0" />
-      <axis xyz="0 0 1" />
-      <limit lower="-1.0" upper="1.0" effort="3.07" velocity="70" />
-    </joint>
-    
-    <transmission name="gimbal_trans">
-      <type>transmission_interface/SimpleTransmission</type>
-      <joint name="gimbal_joint">
-        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      </joint>
-      <actuator name="gimbal_motor">
-        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-        <mechanicalReduction>1</mechanicalReduction>
-      </actuator>
-    </transmission>
-
-    <link name="muzzle_link">
-      <inertial>
-        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> <!-- 修正：质心偏移 -->
-        <mass value="0.8"/>
-        <inertia ixx="0.00036" ixy="0.0" ixz="0.0" iyy="0.01085" iyz="0.0" izz="0.0079"/>
-      </inertial>
-      <visual>
-        <origin xyz="${muzzle_height/10} 0.0 0.0" rpy="0 ${pi/2} 0"/> <!-- 修正：让枪管从关节处延伸 -->
-        <geometry>
-          <cylinder radius="${muzzle_radius}" length="${muzzle_height}"/>
-        </geometry>
-        <material name="white"/>
-      </visual>
-      <collision>
-        <origin xyz="${muzzle_height/2} 0.0 0.0" rpy="0 ${pi/2} 0"/>
-        <geometry>
-          <cylinder radius="${muzzle_radius}" length="${muzzle_height}"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <joint name="muzzle_joint" type="revolute">
-      <parent link="gimbal_link" />
-      <child link="muzzle_link" />
-      <!-- 修正：Z 轴只需考虑相对于云台中心的高度，通常为 0 或云台顶部 -->
-      <origin xyz="0.0 0 0.15" rpy="0 0 0" /> 
-      <axis xyz="0 1 0" />
-      <limit lower="-0.5" upper="0.24" effort="3" velocity="70" />
     </joint>
 
     <transmission name="muzzle_trans">
-      <type>transmission_interface/SimpleTransmission</type>
-      <joint name="muzzle_joint">
-        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      </joint>
-      <actuator name="muzzle_motor">
-        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-        <mechanicalReduction>1</mechanicalReduction>
-      </actuator>
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="muzzle_joint">
+            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="muzzle_motor">
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
     </transmission>
+
+    <!-- =================================================================================== -->
+    <!-- Leg Macro (Optimized with closed chain structure and Wheels) -->
+    <!-- =================================================================================== -->
+    
+    <xacro:macro name="leg" params="side reflect">
+        <xacro:property name="y_offset" value="${(width/2 + 0.005) * reflect}"/>
+
+        <!-- 1. Thigh (First Leg) -->
+        <link name="${side}_thigh_link">
+            <visual>
+                <origin xyz="0.0 0.0 -0.14" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <box size="${leg_width} ${leg_thickness} ${thigh_length}"/>
+                </geometry>
+                <material name="black"/>
+            </visual>
+            <collision>
+                <origin xyz="0.0 0.0 -0.14" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <box size="${leg_width} ${leg_thickness} ${thigh_length}"/>
+                </geometry>
+            </collision>
+            <xacro:box_inertial m="${leg_mass}" w="${leg_width}" h="${thigh_length}" d="${leg_thickness}"/>
+        </link>
+
+        <joint name="${side}_hip_joint" type="continuous">
+            <origin xyz="0.0 ${y_offset} 0" rpy="0.0 ${PI/3} 0.0"/>
+            <parent link="base_link"/>
+            <child link="${side}_thigh_link"/>
+            <axis xyz="0.0 1 0.0"/>
+        </joint>
+
+        <!-- 2. Shank (Second Leg) -->
+        <link name="${side}_shank_link">
+            <visual>
+                <origin xyz="0.0 0.0 -0.15" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <box size="${leg_width} ${leg_thickness} ${shank_length}"/>
+                </geometry>
+                <material name="black"/>
+            </visual>
+            <collision>
+                <origin xyz="0.0 0.0 -0.15" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <box size="${leg_width} ${leg_thickness} ${shank_length}"/>
+                </geometry>
+            </collision>
+            <xacro:box_inertial m="${leg_mass}" w="${leg_width}" h="${shank_length}" d="${leg_thickness}"/>
+        </link>
+
+        <joint name="${side}_knee_joint" type="revolute">
+            <origin xyz="0.0 0.0 -0.3" rpy="0.0 -1.56 0.0"/>
+            <parent link="${side}_thigh_link"/>
+            <child link="${side}_shank_link"/>
+            <axis xyz="0.0 1 0.0"/>
+            <limit lower="-0.9" upper="0.9" effort="3" velocity="70" />
+        </joint>
+
+        <!-- 3. Closed Chain Structure Elements (Auxiliary Linkages) -->
+        
+        <!-- Complex 1: Connects to Thigh -->
+        <link name="${side}_linkage_1">
+             <visual>
+                <origin xyz="0.0 0.0 0" rpy="0.0 0.0 0.0"/>
+                <geometry><box size="0.04 0.01 0.17"/></geometry>
+                <material name="orange"/>
+            </visual>
+            <xacro:box_inertial m="0.05" w="0.04" h="0.17" d="0.01"/>
+        </link>
+        <joint name="${side}_linkage_1_joint" type="revolute">
+            <origin xyz="0.0 0.0 -0.15" rpy="0.0 ${PI/2} 0.0"/>
+            <parent link="${side}_thigh_link"/>
+            <child link="${side}_linkage_1"/>
+            <axis xyz="0.0 1 0.0"/>
+            <limit lower="-0.9" upper="0.9" effort="3" velocity="70" />
+        </joint>
+
+        <!-- Complex 2: Connects to Thigh -->
+        <link name="${side}_linkage_2">
+             <visual>
+                <origin xyz="0.0 0.0 0.0425" rpy="0.0 0.0 0.0"/>
+                <geometry><box size="0.04 0.01 0.085"/></geometry>
+                <material name="orange"/>
+            </visual>
+            <xacro:box_inertial m="0.05" w="0.04" h="0.085" d="0.01"/>
+        </link>
+        <joint name="${side}_linkage_2_joint" type="continuous">
+            <origin xyz="0 ${y_offset} 0" rpy="0 ${5*PI/6} 0"/>
+            <parent link="base_link"/>
+            <child link="${side}_linkage_2"/>
+            <axis xyz="0.0 1 0.0"/>
+        </joint>
+
+        <!-- Cross Connection 1: Connects to Linkage 2 -->
+        <!-- Originally 'first_connect_complex' parent 'second_complex' (linkage_2) -->
+        <link name="${side}_cross_conn_1">
+             <visual>
+                <origin xyz="0 0.0 0.07" rpy="0.0 0.0 0.0"/>
+                <geometry><box size="0.02 0.01 0.17"/></geometry>
+                <material name="white"/>
+            </visual>
+            <xacro:box_inertial m="0.02" w="0.02" h="0.17" d="0.01"/>
+        </link>
+        <joint name="${side}_cross_conn_1_joint" type="revolute">
+            <origin xyz="0 0 0.07" rpy="0.0 ${PI/2} 0.0"/>
+            <parent link="${side}_linkage_2"/>
+            <child link="${side}_cross_conn_1"/>
+            <axis xyz="0.0 1 0.0"/>
+            <limit lower="-0.9" upper="0.9" effort="3" velocity="70" />
+        </joint>
+
+        <!-- Cross Connection 2: Connects to Linkage 1 -->
+        <!-- Originally 'second_connect_complex' parent 'first_complex' (linkage_1) -->
+        <link name="${side}_cross_conn_2">
+             <visual>
+                <origin xyz="0 0.0 0.07" rpy="0.0 0.0 0.0"/>
+                <geometry><box size="0.02 0.01 0.17"/></geometry>
+                <material name="white"/>
+            </visual>
+             <xacro:box_inertial m="0.02" w="0.02" h="0.17" d="0.01"/>
+        </link>
+        <joint name="${side}_cross_conn_2_joint" type="revolute">
+            <origin xyz="0 0 -0.07" rpy="0.0 ${PI/2} 0.0"/>
+            <parent link="${side}_linkage_1"/>
+            <child link="${side}_cross_conn_2"/>
+            <axis xyz="0.0 1 0.0"/>
+            <limit lower="-0.9" upper="0.9" effort="3" velocity="70" />
+        </joint>
+
+        <!-- 4. Wheel -->
+        <link name="${side}_wheel_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
+                </geometry>
+                <material name="black"/>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
+                </geometry>
+            </collision>
+            <xacro:cylinder_inertial m="${wheel_mass}" r="${wheel_radius}" h="${wheel_length}"/>
+        </link>
+
+        <joint name="${side}_wheel_joint" type="continuous">
+            <origin xyz="0 0 -${shank_length}" rpy="0 0 0"/>
+            <parent link="${side}_shank_link"/>
+            <child link="${side}_wheel_link"/>
+            <axis xyz="0 1 0"/>
+            <limit effort="100" velocity="100"/>
+        </joint>
+
+        <gazebo reference="${side}_wheel_link">
+            <mu1>1.0</mu1>
+            <mu2>1.0</mu2>
+            <kp>1000000.0</kp>
+            <kd>100.0</kd>
+            <material>Gazebo/Black</material>
+        </gazebo>
+
+        <!-- Wheel Transmission -->
+        <transmission name="${side}_wheel_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${side}_wheel_joint">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="${side}_wheel_motor">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+        </transmission>
+
+      <gazebo>
+        <joint name="${side}_cross_conn_1_loop_joint" type="revolute">
+          <parent>${side}_cross_conn_1</parent>
+          <child>${side}_linkage_1</child>
+          <axis>
+            <xyz>0 1 0</xyz>
+          </axis>
+          <limit lower="-3.14" upper="3.14" effort="10" velocity="100"/>
+          <pose>0 0 -0.07 0 0 0</pose>
+        </joint>
+      </gazebo>
+
+      <gazebo>
+        <joint name="${side}_cross_conn_2_loop_joint" type="revolute">
+          <parent>${side}_cross_conn_2</parent>
+          <child>${side}_shank_link</child>
+          <axis>
+            <xyz>0 1 0</xyz>
+          </axis>
+          <limit lower="-3.14" upper="3.14" effort="10" velocity="100"/>
+          <pose>0 0 0.07 0 0 0</pose>
+        </joint>
+      </gazebo>
+
+    </xacro:macro>
+
+    <!-- Instantiate Legs -->
+    <xacro:leg side="left" reflect="1" />
+    <xacro:leg side="right" reflect="-1" />
+
+
+
+
+    <!-- =================================================================================== -->
+    <!-- Gazebo Plugins -->
+    <!-- =================================================================================== -->
+    <gazebo>
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+            <robotNamespace>/</robotNamespace>
+        </plugin>
+    </gazebo>
 
     <gazebo reference="gimbal_imu_link">
       <gravity>true</gravity>
@@ -262,12 +457,4 @@
       </sensor>
     </gazebo>
 
-
-
-
-    <gazebo>
-      <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-        <robotNamespace>/</robotNamespace>
-      </plugin>
-    </gazebo>
 </robot>

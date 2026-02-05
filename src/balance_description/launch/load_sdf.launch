@@ -1,0 +1,19 @@
+<launch>
+  <!-- 启动 Gazebo -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="paused" value="true"/>
+  </include>
+
+  <!-- 加载 SDF 模型到 Gazebo -->
+  <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+        args="-sdf -file $(find balance_description)/urdf/balance.sdf -model balance_bot -x 0 -y 0 -z 0.2" />
+
+  <!-- 加载控制器配置 (仍然需要，因为控制器是通过 ROS 接口与 Gazebo 插件通信的) -->
+  <rosparam file="$(find balance_description)/config/balance.yaml" command="load"/>
+
+  <!-- 启动控制器管理器 -->
+  <!-- 注意：SDF 加载的模型通常不会自动发布 /joint_states，因此 robot_state_publisher 可能无法正常工作，除非 SDF 中启用了相关插件并且能在 ROS 中正确映射 -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+        output="screen" args="joint_state_controller left_wheel_effort_controller right_wheel_effort_controller --stop"/>
+
+</launch>

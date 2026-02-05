@@ -1,0 +1,905 @@
+<sdf version='1.7'>
+  <model name='balance_bot'>
+    <link name='base_footprint'>
+      <inertial>
+        <pose>-0.014993 0 0.1305 0 -0 0</pose>
+        <mass>2.001</mass>
+        <inertia>
+          <ixx>0.04229</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0422902</iyy>
+          <iyz>0</iyz>
+          <izz>0.0833302</izz>
+        </inertia>
+      </inertial>
+      <collision name='base_footprint_fixed_joint_lump__base_link_collision'>
+        <pose>0 0 0.1305 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.5 0.5 0.061</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name='base_footprint_fixed_joint_lump__base_link_visual'>
+        <pose>0 0 0.1305 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.5 0.5 0.061</size>
+          </box>
+        </geometry>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__imu_link_visual_1'>
+        <pose>0 0 0.1305 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.01 0.01 0.01</size>
+          </box>
+        </geometry>
+      </visual>
+      <gravity>1</gravity>
+      <sensor name='imu_sensor' type='imu'>
+        <always_on>1</always_on>
+        <update_rate>1000</update_rate>
+        <visualize>1</visualize>
+        <imu/>
+        <plugin name='imu_plugin' filename='libgazebo_ros_imu_sensor.so'>
+          <topicName>imu</topicName>
+          <bodyName>imu_link</bodyName>
+          <updateRateHZ>100.0</updateRateHZ>
+          <gaussianNoise>0.0</gaussianNoise>
+          <xyzOffset>0 0 0</xyzOffset>
+          <rpyOffset>0 0 0</rpyOffset>
+          <frameName>imu_link</frameName>
+          <initialOrientationAsReference>0</initialOrientationAsReference>
+        </plugin>
+        <pose>0 0 0.1305 0 -0 0</pose>
+      </sensor>
+    </link>
+    <joint name='gimbal_joint' type='revolute'>
+      <pose relative_to='base_footprint'>0 0 0.221 0 -0 0</pose>
+      <parent>base_footprint</parent>
+      <child>gimbal_link</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <effort>3.07</effort>
+          <velocity>70</velocity>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='gimbal_link'>
+      <pose relative_to='gimbal_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.2</mass>
+        <inertia>
+          <ixx>0.00042</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00042</iyy>
+          <iyz>0</iyz>
+          <izz>0.00036</izz>
+        </inertia>
+      </inertial>
+      <collision name='gimbal_link_collision'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.12</length>
+            <radius>0.06</radius>
+          </cylinder>
+        </geometry>
+      </collision>
+      <visual name='gimbal_link_visual'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.12</length>
+            <radius>0.06</radius>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='muzzle_joint' type='revolute'>
+      <pose relative_to='gimbal_link'>0 0 0.15 0 -0 0</pose>
+      <parent>gimbal_link</parent>
+      <child>muzzle_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.5</lower>
+          <upper>0.24</upper>
+          <effort>3</effort>
+          <velocity>70</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='muzzle_link'>
+      <pose relative_to='muzzle_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.801</mass>
+        <inertia>
+          <ixx>0.000360017</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.01085</iyy>
+          <iyz>0</iyz>
+          <izz>0.00790002</izz>
+        </inertia>
+      </inertial>
+      <collision name='muzzle_link_collision'>
+        <pose>0.2 0 0 0 1.5708 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.4</length>
+            <radius>0.03</radius>
+          </cylinder>
+        </geometry>
+      </collision>
+      <visual name='muzzle_link_visual'>
+        <pose>0.04 0 0 0 1.5708 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.4</length>
+            <radius>0.03</radius>
+          </cylinder>
+        </geometry>
+      </visual>
+      <visual name='muzzle_link_fixed_joint_lump__gimbal_imu_link_visual_1'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.01 0.01 0.01</size>
+          </box>
+        </geometry>
+      </visual>
+      <gravity>1</gravity>
+      <sensor name='muzzle_imu_sensor' type='imu'>
+        <always_on>1</always_on>
+        <update_rate>1000</update_rate>
+        <visualize>1</visualize>
+        <imu/>
+        <plugin name='muzzle_imu_plugin' filename='libgazebo_ros_imu_sensor.so'>
+          <topicName>gimbal_imu</topicName>
+          <bodyName>gimbal_imu_link</bodyName>
+          <updateRateHZ>100.0</updateRateHZ>
+          <gaussianNoise>0.0</gaussianNoise>
+          <xyzOffset>0 0 0</xyzOffset>
+          <rpyOffset>0 0 0</rpyOffset>
+          <frameName>muzzle_link</frameName>
+          <initialOrientationAsReference>0</initialOrientationAsReference>
+        </plugin>
+        <pose>0 0 0 0 -0 0</pose>
+      </sensor>
+    </link>
+    <joint name='left_hip_joint' type='revolute'>
+      <pose relative_to='base_footprint'>0 0.255 0.1305 0 1.0472 0</pose>
+      <parent>base_footprint</parent>
+      <child>left_thigh_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='left_thigh_link'>
+      <pose relative_to='left_hip_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.00133417</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.16667e-05</iyy>
+          <iyz>0</iyz>
+          <izz>0.00135417</izz>
+        </inertia>
+      </inertial>
+      <collision name='left_thigh_link_collision'>
+        <pose>0 0 -0.14 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.01 0.4</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name='left_thigh_link_visual'>
+        <pose>0 0 -0.14 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.01 0.4</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='left_knee_joint' type='revolute'>
+      <pose relative_to='left_thigh_link'>0 0 -0.3 0 -1.56 0</pose>
+      <parent>left_thigh_link</parent>
+      <child>left_shank_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.72</lower>
+          <upper>0.72</upper>
+          <effort>3</effort>
+          <velocity>70</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='left_shank_link'>
+      <pose relative_to='left_knee_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.00208417</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.16667e-05</iyy>
+          <iyz>0</iyz>
+          <izz>0.00210417</izz>
+        </inertia>
+      </inertial>
+      <collision name='left_shank_link_collision'>
+        <pose>0 0 -0.15 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.01 0.5</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name='left_shank_link_visual'>
+        <pose>0 0 -0.15 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.01 0.5</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='left_wheel_joint' type='revolute'>
+      <pose relative_to='left_shank_link'>0 0 -0.5 0 -0 0</pose>
+      <parent>left_shank_link</parent>
+      <child>left_wheel_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <effort>100</effort>
+          <velocity>100</velocity>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='left_wheel_link'>
+      <pose relative_to='left_wheel_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.0012875</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0012875</iyy>
+          <iyz>0</iyz>
+          <izz>0.0025</izz>
+        </inertia>
+      </inertial>
+      <collision name='left_wheel_link_collision'>
+        <pose>0 0 0 1.5708 -0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.03</length>
+            <radius>0.1</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <kp>1e+06</kp>
+              <kd>100</kd>
+            </ode>
+          </contact>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='left_wheel_link_visual'>
+        <pose>0 0 0 1.5708 -0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.03</length>
+            <radius>0.1</radius>
+          </cylinder>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Black</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+    </link>
+    <joint name='left_linkage_1_joint' type='revolute'>
+      <pose relative_to='left_thigh_link'>0 0 -0.15 0 1.5708 0</pose>
+      <parent>left_thigh_link</parent>
+      <child>left_linkage_1</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.72</lower>
+          <upper>0.72</upper>
+          <effort>3</effort>
+          <velocity>70</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='left_linkage_1'>
+      <pose relative_to='left_linkage_1_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.05</mass>
+        <inertia>
+          <ixx>0.000120833</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>7.08333e-06</iyy>
+          <iyz>0</iyz>
+          <izz>0.000127083</izz>
+        </inertia>
+      </inertial>
+      <visual name='left_linkage_1_visual'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.04 0.01 0.17</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='left_cross_conn_2_joint' type='revolute'>
+      <pose relative_to='left_linkage_1'>0 0 -0.07 0 1.5708 0</pose>
+      <parent>left_linkage_1</parent>
+      <child>left_cross_conn_2</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='left_cross_conn_2'>
+      <pose relative_to='left_cross_conn_2_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>4.83333e-05</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>8.33333e-07</iyy>
+          <iyz>0</iyz>
+          <izz>4.88333e-05</izz>
+        </inertia>
+      </inertial>
+      <visual name='left_cross_conn_2_visual'>
+        <pose>0 0 0.07 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.01 0.17</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='left_linkage_2_joint' type='revolute'>
+      <pose relative_to='base_footprint'>0 0.255 0.1305 3.14159 0.523599 3.14159</pose>
+      <parent>base_footprint</parent>
+      <child>left_linkage_2</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.72</lower>
+          <upper>0.72</upper>
+          <effort>3</effort>
+          <velocity>70</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='left_linkage_2'>
+      <pose relative_to='left_linkage_2_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.05</mass>
+        <inertia>
+          <ixx>3.05208e-05</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>7.08333e-06</iyy>
+          <iyz>0</iyz>
+          <izz>3.67708e-05</izz>
+        </inertia>
+      </inertial>
+      <visual name='left_linkage_2_visual'>
+        <pose>0 0 0.0425 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.04 0.01 0.085</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='left_cross_conn_1_joint' type='revolute'>
+      <pose relative_to='left_linkage_2'>0 0 0.07 0 1.5708 0</pose>
+      <parent>left_linkage_2</parent>
+      <child>left_cross_conn_1</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='left_cross_conn_1'>
+      <pose relative_to='left_cross_conn_1_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>4.83333e-05</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>8.33333e-07</iyy>
+          <iyz>0</iyz>
+          <izz>4.88333e-05</izz>
+        </inertia>
+      </inertial>
+      <visual name='left_cross_conn_1_visual'>
+        <pose>0 0 0.07 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.01 0.17</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='right_hip_joint' type='revolute'>
+      <pose relative_to='base_footprint'>0 -0.255 0.1305 0 1.0472 0</pose>
+      <parent>base_footprint</parent>
+      <child>right_thigh_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='right_thigh_link'>
+      <pose relative_to='right_hip_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.00133417</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.16667e-05</iyy>
+          <iyz>0</iyz>
+          <izz>0.00135417</izz>
+        </inertia>
+      </inertial>
+      <collision name='right_thigh_link_collision'>
+        <pose>0 0 -0.14 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.01 0.4</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name='right_thigh_link_visual'>
+        <pose>0 0 -0.14 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.01 0.4</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='right_knee_joint' type='revolute'>
+      <pose relative_to='right_thigh_link'>0 0 -0.3 0 -1.56 0</pose>
+      <parent>right_thigh_link</parent>
+      <child>right_shank_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.72</lower>
+          <upper>0.72</upper>
+          <effort>3</effort>
+          <velocity>70</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='right_shank_link'>
+      <pose relative_to='right_knee_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.00208417</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.16667e-05</iyy>
+          <iyz>0</iyz>
+          <izz>0.00210417</izz>
+        </inertia>
+      </inertial>
+      <collision name='right_shank_link_collision'>
+        <pose>0 0 -0.15 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.01 0.5</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name='right_shank_link_visual'>
+        <pose>0 0 -0.15 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.01 0.5</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='right_wheel_joint' type='revolute'>
+      <pose relative_to='right_shank_link'>0 0 -0.5 0 -0 0</pose>
+      <parent>right_shank_link</parent>
+      <child>right_wheel_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <effort>100</effort>
+          <velocity>100</velocity>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='right_wheel_link'>
+      <pose relative_to='right_wheel_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.0012875</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0012875</iyy>
+          <iyz>0</iyz>
+          <izz>0.0025</izz>
+        </inertia>
+      </inertial>
+      <collision name='right_wheel_link_collision'>
+        <pose>0 0 0 1.5708 -0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.03</length>
+            <radius>0.1</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <kp>1e+06</kp>
+              <kd>100</kd>
+            </ode>
+          </contact>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='right_wheel_link_visual'>
+        <pose>0 0 0 1.5708 -0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.03</length>
+            <radius>0.1</radius>
+          </cylinder>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Black</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+    </link>
+    <joint name='right_linkage_1_joint' type='revolute'>
+      <pose relative_to='right_thigh_link'>0 0 -0.15 0 1.5708 0</pose>
+      <parent>right_thigh_link</parent>
+      <child>right_linkage_1</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.72</lower>
+          <upper>0.72</upper>
+          <effort>3</effort>
+          <velocity>70</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='right_linkage_1'>
+      <pose relative_to='right_linkage_1_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.05</mass>
+        <inertia>
+          <ixx>0.000120833</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>7.08333e-06</iyy>
+          <iyz>0</iyz>
+          <izz>0.000127083</izz>
+        </inertia>
+      </inertial>
+      <visual name='right_linkage_1_visual'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.04 0.01 0.17</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='right_cross_conn_2_joint' type='revolute'>
+      <pose relative_to='right_linkage_1'>0 0 -0.07 0 1.5708 0</pose>
+      <parent>right_linkage_1</parent>
+      <child>right_cross_conn_2</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='right_cross_conn_2'>
+      <pose relative_to='right_cross_conn_2_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>4.83333e-05</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>8.33333e-07</iyy>
+          <iyz>0</iyz>
+          <izz>4.88333e-05</izz>
+        </inertia>
+      </inertial>
+      <visual name='right_cross_conn_2_visual'>
+        <pose>0 0 0.07 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.01 0.17</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='right_linkage_2_joint' type='revolute'>
+      <pose relative_to='base_footprint'>0 -0.255 0.1305 3.14159 0.523599 3.14159</pose>
+      <parent>base_footprint</parent>
+      <child>right_linkage_2</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.72</lower>
+          <upper>0.72</upper>
+          <effort>3</effort>
+          <velocity>70</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='right_linkage_2'>
+      <pose relative_to='right_linkage_2_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.05</mass>
+        <inertia>
+          <ixx>3.05208e-05</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>7.08333e-06</iyy>
+          <iyz>0</iyz>
+          <izz>3.67708e-05</izz>
+        </inertia>
+      </inertial>
+      <visual name='right_linkage_2_visual'>
+        <pose>0 0 0.0425 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.04 0.01 0.085</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='right_cross_conn_1_joint' type='revolute'>
+      <pose relative_to='right_linkage_2'>0 0 0.07 0 1.5708 0</pose>
+      <parent>right_linkage_2</parent>
+      <child>right_cross_conn_1</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='right_cross_conn_1'>
+      <pose relative_to='right_cross_conn_1_joint'>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 -0 0</pose>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>4.83333e-05</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>8.33333e-07</iyy>
+          <iyz>0</iyz>
+          <izz>4.88333e-05</izz>
+        </inertia>
+      </inertial>
+      <visual name='right_cross_conn_1_visual'>
+        <pose>0 0 0.07 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.01 0.17</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='left_cross_conn_1_loop_joint' type='revolute'>
+      <parent>left_cross_conn_1</parent>
+      <child>left_linkage_1</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+      </axis>
+      <pose>0 0 -0.07 0 -0 0</pose>
+    </joint>
+    <joint name='left_cross_conn_2_loop_joint' type='revolute'>
+      <parent>left_cross_conn_2</parent>
+      <child>left_shank_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+      </axis>
+      <pose>0 0 -0.07 0 -0 0</pose>
+    </joint>
+    <joint name='right_cross_conn_1_loop_joint' type='revolute'>
+      <parent>right_cross_conn_1</parent>
+      <child>right_linkage_1</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+      </axis>
+      <pose>0 0 -0.07 0 -0 0</pose>
+    </joint>
+    <joint name='right_cross_conn_2_loop_joint' type='revolute'>
+      <parent>right_cross_conn_2</parent>
+      <child>right_shank_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+      </axis>
+      <pose>0 0 -0.07 0 -0 0</pose>
+    </joint>
+    <plugin name='gazebo_ros_control' filename='libgazebo_ros_control.so'>
+      <robotNamespace>/</robotNamespace>
+    </plugin>
+    <frame name='imu_joint' attached_to='base_link'>
+      <pose>0 0 0 0 -0 0</pose>
+    </frame>
+    <frame name='imu_link' attached_to='imu_joint'/>
+    <frame name='base_joint' attached_to='base_footprint'>
+      <pose>0 0 0.1305 0 -0 0</pose>
+    </frame>
+    <frame name='base_link' attached_to='base_joint'/>
+    <frame name='gimbal_imu_joint' attached_to='muzzle_link'>
+      <pose>0 0 0 0 -0 0</pose>
+    </frame>
+    <frame name='gimbal_imu_link' attached_to='gimbal_imu_joint'/>
+  </model>
+</sdf>
