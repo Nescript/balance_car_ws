@@ -1,47 +1,18 @@
 <launch>
-  <!-- ================================================================
-       balance_suspended.launch
-       机器人生成于一个静止支架上，底座架在横杆上，两腿自由悬空。
+  <param name="robot_description" command="$(find xacro)/xacro '$(find balance_description)/urdf/balance.urdf.xacro'"/>
 
-       坐标设计（沿 Z 轴向上为正）：
-         支架横杆顶面  z = 0.375 m
-         base_footprint z = 0.38 m  (紧贴横杆顶面，留 5 mm 间隙)
-         base_link 中心 z = 0.38 + 0.1 + 0.0305 = 0.5105 m
-         轮子最低点    ≈ 0.38 - 0.3 - 0.5 + 0.1 = -0.32 m (相对base_footprint)
-                       ≈ 0.06 m (绝对)，正好悬离地面
-  ================================================================ -->
-
-  <!-- 1. 载入机器人 URDF -->
-  <param name="robot_description"
-         command="$(find xacro)/xacro '$(find balance_description)/urdf/balance.urdf.xacro'"/>
-
-  <!-- 2. 启动 Gazebo（暂停，方便初始化）-->
+  <!-- 2. 启动 Gazebo 并生成机器人 -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="paused"     value="true"/>
-    <arg name="use_sim_time" value="true"/>
-    <arg name="gui"        value="true"/>
+    <arg name="paused" value="true"/>
   </include>
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+          args="-urdf -model balance_car -param robot_description -x 0 -y 0 -z 0.6 -P 0.1" />
 
-  <!-- 3. 生成支架：一根静止横杆（沿 Y 轴，宽 0.7 m 覆盖轮距 0.53 m）-->
-  <node name="spawn_stand" pkg="gazebo_ros" type="spawn_model"
-        respawn="false" output="screen"
-        args="-sdf -model balance_stand
-              -file $(find balance_controller)/models/balance_stand/Support/model.sdf
-              -x 0 -y 0 -z 0.45"/>
-
-  <!-- 4. 生成机器人，base_footprint 放在支架顶面上方 -->
-  <node name="spawn_robot" pkg="gazebo_ros" type="spawn_model"
-        respawn="false" output="screen"
-        args="-urdf -model balance_car -param robot_description
-              -x 0 -y 0 -z 0.9"/>
-
-  <!-- 5. 加载控制器参数 -->
   <rosparam file="$(find balance_controller)/config/balance_control.yaml" command="load"/>
-
+  <!-- 建议同时启动 robot_state_publisher 以便在 Rviz 查看 -->
   <node name="controller_spawner" pkg="controller_manager" type="spawner"
         respawn="false" output="screen"
-        args="joint_state_controller balance_controller --stopped"/>
-
+        args="joint_state_controller balance_controller"/>
   <node name="robot_state_publisher" pkg="robot_state_publisher"
         type="robot_state_publisher"/>
 </launch>

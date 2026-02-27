@@ -145,7 +145,7 @@
         <xacro:cylinder_inertial m="0.2" r="${gimbal_radius}" h="${gimbal_height}"/>
     </link>
 
-    <joint name="gimbal_joint" type="continuous">
+    <joint name="gimbal_joint" type="revolute">
         <parent link="base_link" />
         <child link="gimbal_link" />
         <origin xyz="0 0 ${height / 2 + gimbal_height / 2}" rpy="0 0 0" />
@@ -414,7 +414,7 @@
           <axis>
             <xyz>0 1 0</xyz>
           </axis>
-          <limit lower="-3.14" upper="3.14" effort="10" velocity="100"/>
+          <limit lower="-3.14" upper="3.14" effort="3" velocity="100"/>
           <pose>0 0 0.07 0 0 0</pose>
         </joint>
       </gazebo>
@@ -425,7 +425,7 @@
           <axis>
             <xyz>0 1 0</xyz>
           </axis>
-          <limit lower="-3.14" upper="3.14" effort="10" velocity="100"/>
+          <limit lower="-3.14" upper="3.14" effort="3" velocity="100"/>
           <pose>0 0 0.07 0 0 0</pose>
         </joint>
       </gazebo>

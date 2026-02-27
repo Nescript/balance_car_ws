@@ -11,5 +11,7 @@ right_wheel_effort_controller:
   joint: right_wheel_joint
 
 /gazebo_ros_control/pid_gains:
-  left_wheel_joint: {p: 10.0, i: 0.1, d: 1.0}
-  right_wheel_joint: {p: 10.0, i: 0.1, d: 1.0}
+  left_hip_joint:       {p: 80.0, i: 0.5, d: 8.0}
+  right_hip_joint:      {p: 80.0, i: 0.5, d: 8.0}
+  left_linkage_2_joint: {p: 80.0, i: 0.5, d: 8.0}
+  right_linkage_2_joint: {p: 80.0, i: 0.5, d: 8.0}
