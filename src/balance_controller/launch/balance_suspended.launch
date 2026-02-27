@@ -3,7 +3,6 @@
 
   <!-- 2. 启动 Gazebo 并生成机器人 -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="paused" value="true"/>
   </include>
   <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
           args="-urdf -model balance_car -param robot_description -x 0 -y 0 -z 0.6 -P 0.1" />

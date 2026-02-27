@@ -438,8 +438,36 @@
     <xacro:leg side="right" reflect="-1" />
 
 
-
-
+    <link name="support">
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <mass value="1000.0"/>
+            <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+        </inertial>
+        <visual name="">
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <geometry>
+                <box size="0.5 0.3 1.0"/>
+            </geometry>
+            <material name="">
+                <color rgba="1.0 0.0 0.0 1.0"/>
+                <texture filename=""/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <geometry>
+                <box size="0.5 0.3 1.0"/>
+            </geometry>
+        </collision>
+    </link>
+    <joint name="support_joint" type="fixed">
+        <origin xyz="0.0 0.0 -0.5" rpy="0.0 0.0 0.0"/>
+        <parent link="base_link"/>
+        <child link="support"/>
+        <axis xyz="0.0 0.0 0.0"/>
+        <limit lower="0.0" upper="0.0" effort="0.0" velocity="0.0"/>
+    </joint>
     <!-- =================================================================================== -->
     <!-- Gazebo Plugins -->
     <!-- =================================================================================== -->

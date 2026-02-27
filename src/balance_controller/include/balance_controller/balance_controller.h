@@ -5,6 +5,7 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Point.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <nav_msgs/Odometry.h>
@@ -62,6 +63,10 @@ private:
   ros::Publisher pitch_error_pub_;
   ros::Publisher omega_error_pub_;
   ros::Publisher last_effort_pub_;
+  ros::Publisher current_left_point_pos_;
+  ros::Publisher current_right_point_pos_;
+  ros::Publisher target_left_point_pos_;
+  ros::Publisher target_right_point_pos_;
 
   ros::Time start_time_;
 

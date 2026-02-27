@@ -34,6 +34,10 @@ bool BalanceController::init(hardware_interface::PositionJointInterface *effort_
   pitch_error_pub_ = root_nh.advertise<std_msgs::Float64>("pitch_error", 1);
   omega_error_pub_ = root_nh.advertise<std_msgs::Float64>("omega_error", 1);
   last_effort_pub_ = root_nh.advertise<std_msgs::Float64>("last_effort", 1);
+  current_left_point_pos_ = root_nh.advertise<geometry_msgs::Point>("current_left_point", 1);
+  current_right_point_pos_ = root_nh.advertise<geometry_msgs::Point>("current_right_point", 1);
+  target_left_point_pos_ = root_nh.advertise<geometry_msgs::Point>("target_left_point", 1);
+  target_right_point_pos_ = root_nh.advertise<geometry_msgs::Point>("target_right_point", 1);
 
   controller_nh.param("traj_x_center",      traj_x_center_,     l5_ / 2.0);   // 基座中心
   controller_nh.param("traj_y_center",      traj_y_center_,     0.22);        // 工作区中部
@@ -76,7 +80,7 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   // 1. 生成正弦轨迹目标末端点 (x, y)
   double target_x, target_y;
   sinusoidalTrajectory(time, target_x, target_y);
-
+  
   // 2. 逆运动学 → 目标关节角
   double target_theta1, target_theta4;
   if (!inverseKinematics(target_x, target_y, target_theta1, target_theta4)) {
@@ -105,6 +109,17 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
       target_x, target_y, fk_x, fk_y,
       cur_l1_left, target_theta1, cur_l4_left, target_theta4);
   }
+
+  geometry_msgs::Point tgt_point, current_point;
+  tgt_point.x = target_x;
+  tgt_point.y = target_y;
+  tgt_point.z = 0.0;
+  target_left_point_pos_.publish(tgt_point);
+
+  current_point.x = fk_x;
+  current_point.y = fk_y;
+  current_point.z = 0.0;
+  current_left_point_pos_.publish(current_point);
 }
 
 bool BalanceController::inverseKinematics(double cx, double cy,

@@ -71,9 +71,9 @@ balance_controller:
   # IK 坐标系以 hip_joint 为原点，y 轴向下为负
   # 可达范围：|l1-l2|=0.08 m  ~  l1+l2=0.22 m
   traj_x_center:     0.0     # x 方向中心 (m)
-  traj_y_center:    -0.17    # y 方向中心 (m)，hip 正下方 17 cm，处于可达区中部
-  traj_x_amplitude:  0.02    # x 振幅 (m)，±2 cm
-  traj_y_amplitude:  0.02    # y 振幅 (m)，±2 cm
+  traj_y_center:     0.17    # y 方向中心 (m)，hip 正下方 17 cm，处于可达区中部
+  traj_x_amplitude:  0.05    # x 振幅 (m)，±2 cm
+  traj_y_amplitude:  0.04    # y 振幅 (m)，±2 cm
   traj_frequency:    0.3     # 频率 (Hz)，较慢便于 PID 跟踪
   traj_sine_periods: 2       # y 方向正弦半周期数
 
@@ -87,7 +87,7 @@ joint_state_controller:
   publish_rate: 50
 
 # PositionJointInterface 底层 PID（gazebo_ros_control 读取路径：/pid_gains/<joint_name>）
-pid_gains:
+/gazebo_ros_control/pid_gains:
   left_hip_joint:       {p: 80.0, i: 0.5, d: 8.0}
   right_hip_joint:      {p: 80.0, i: 0.5, d: 8.0}
   left_linkage_2_joint: {p: 80.0, i: 0.5, d: 8.0}
