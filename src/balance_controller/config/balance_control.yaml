@@ -85,3 +85,14 @@ balance_controller:
 joint_state_controller:
   type: "joint_state_controller/JointStateController"
   publish_rate: 50
+
+# PositionJointInterface 底层 PID（gazebo_ros_control 读取，根命名空间下）
+# 格式：<joint_name>/pid: {p, i, d}
+left_hip_joint:
+  pid: {p: 8.0, i: 0.5, d: 8.0}
+right_hip_joint:
+  pid: {p: 8.0, i: 0.5, d: 8.0}
+left_linkage_2_joint:
+  pid: {p: 8.0, i: 0.5, d: 8.0}
+right_linkage_2_joint:
+  pid: {p: 8.0, i: 0.5, d: 8.0}

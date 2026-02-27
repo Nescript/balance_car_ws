@@ -7,13 +7,9 @@
 
 namespace balance_controller {
 
-bool BalanceController::init(hardware_interface::EffortJointInterface *effort_joint_interface,
+bool BalanceController::init(hardware_interface::PositionJointInterface *effort_joint_interface,
             ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) {
   try {
-    left_wheel_joint_ = effort_joint_interface->getHandle("left_wheel_joint");
-    right_wheel_joint_ = effort_joint_interface->getHandle("right_wheel_joint");
-    gimbal_pitch_joint_ = effort_joint_interface->getHandle("muzzle_joint");
-    gimbal_yaw_joint_ = effort_joint_interface->getHandle("gimbal_joint");
     left_l1_joint_ = effort_joint_interface->getHandle("left_hip_joint");
     right_l1_joint_ = effort_joint_interface->getHandle("right_hip_joint");
     left_l4_joint_ = effort_joint_interface->getHandle("left_linkage_2_joint");
@@ -28,26 +24,6 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
       !controller_nh.getParam("l4", l4_) ||
       !controller_nh.getParam("l5", l5_)) {
     ROS_ERROR("Failed to load link lengths from parameter server");
-    return false;
-  }
-  if (!yaw_pid_.init(ros::NodeHandle(controller_nh, "yaw_pid"))) {
-    ROS_ERROR("Failed to initialize yaw PID");
-    return false;
-  }
-  if (!gimbal_pitch_pid_.init(ros::NodeHandle(controller_nh, "gimbal_pitch_pid"))) {
-    ROS_ERROR("Failed to initialize gimbal pitch PID");
-    return false;
-  }
-  if (!gimbal_yaw_pid_.init(ros::NodeHandle(controller_nh, "gimbal_yaw_pid"))) {
-    ROS_ERROR("Failed to initialize gimbal yaw PID");
-    return false;
-  }
-  if (!l1_pid_.init(ros::NodeHandle(controller_nh, "l1_pid"))) {
-    ROS_ERROR("Failed to initialize l1 PID");
-    return false;
-  }
-  if (!l4_pid_.init(ros::NodeHandle(controller_nh, "l4_pid"))) {
-    ROS_ERROR("Failed to initialize l4 PID");
     return false;
   }
   gimbal_imu_sub_ = root_nh.subscribe("gimbal_imu", 1, &BalanceController::gimbalImuCallback, this);
@@ -66,7 +42,6 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
   controller_nh.param("traj_frequency",     traj_frequency_,    0.5);         // 0.5 Hz
   controller_nh.param("traj_sine_periods",  traj_sine_periods_, 2);           // 2个正弦半周期
 
-  start_time_ = ros::Time::now();
   imu_sub_ = root_nh.subscribe("imu", 1, &BalanceController::imuCallback, this);
   cmd_vel_sub_ = root_nh.subscribe("cmd_vel", 1, &BalanceController::cmdVelCallback, this);
 
@@ -74,11 +49,24 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
 }
 
 void BalanceController::starting(const ros::Time& time) {
+  // 重置轨迹时钟，确保从当前时刻开始
+  start_time_ = time;
+
+  // 读取当前关节角作为初始保持位置，避免启动瞬间跳变
+  double init_theta1_l = left_l1_joint_.getPosition();
+  double init_theta4_l = left_l4_joint_.getPosition();
+  double init_theta1_r = right_l1_joint_.getPosition();
+  double init_theta4_r = right_l4_joint_.getPosition();
+  left_l1_joint_.setCommand(init_theta1_l);
+  left_l4_joint_.setCommand(init_theta4_l);
+  right_l1_joint_.setCommand(init_theta1_r);
+  right_l4_joint_.setCommand(init_theta4_r);
+
+  ROS_INFO("BalanceController started. Init angles: l1_L=%.3f l4_L=%.3f l1_R=%.3f l4_R=%.3f",
+           init_theta1_l, init_theta4_l, init_theta1_r, init_theta4_r);
+
   target_linear_vel_ = 0.0;
   target_angular_vel_ = 0.0;
-  target_pitch_ = -0.1415;
-  target_omega_ = 0.0;
-
   current_pos_ = 0.0;
   target_pos_ = 0.0;
   current_state_ = STATE_NORMAL;
@@ -103,23 +91,19 @@ void BalanceController::update(const ros::Time& time, const ros::Duration& perio
   double cur_l1_right = right_l1_joint_.getPosition();
   double cur_l4_right = right_l4_joint_.getPosition();
 
-  // 4. 计算位置误差并通过 PID 输出力矩
-  double err_l1_left  = target_theta1 - cur_l1_left;
-  double err_l4_left  = target_theta4 - cur_l4_left;
-  double err_l1_right = target_theta1 - cur_l1_right;
-  double err_l4_right = target_theta4 - cur_l4_right;
+  // 4. 直接下发目标位置（PositionJointInterface 由底层 PID 伺服）
+  left_l1_joint_.setCommand(target_theta1);
+  left_l4_joint_.setCommand(target_theta4);
+  right_l1_joint_.setCommand(target_theta1);
+  right_l4_joint_.setCommand(target_theta4);
 
-  left_l1_joint_.setCommand(l1_pid_.computeCommand(err_l1_left,  period));
-  left_l4_joint_.setCommand(l4_pid_.computeCommand(err_l4_left,  period));
-  right_l1_joint_.setCommand(l1_pid_.computeCommand(err_l1_right, period));
-  right_l4_joint_.setCommand(l4_pid_.computeCommand(err_l4_right, period));
-
-  // 5. 正解验证：计算实际末端位置（用于调试/发布）
+  // 5. 正解验证：计算实际末端位置（用于调试）
   double fk_x, fk_y;
   if (forwardKinematics(cur_l1_left, cur_l4_left, fk_x, fk_y)) {
-    ROS_DEBUG_THROTTLE(0.5,
-      "Traj target=(%.4f,%.4f) | FK actual=(%.4f,%.4f) | theta1_err=%.4f theta4_err=%.4f",
-      target_x, target_y, fk_x, fk_y, err_l1_left, err_l4_left);
+    ROS_INFO_THROTTLE(0.5,
+      "Traj target=(%.4f,%.4f) | FK actual=(%.4f,%.4f) | theta1=%.4f->%.4f theta4=%.4f->%.4f",
+      target_x, target_y, fk_x, fk_y,
+      cur_l1_left, target_theta1, cur_l4_left, target_theta4);
   }
 }
 
@@ -209,8 +193,11 @@ void BalanceController::sinusoidalTrajectory(const ros::Time &time,
 }
 
 void BalanceController::stopping(const ros::Time& time) {
-  left_wheel_joint_.setCommand(0.0);
-  right_wheel_joint_.setCommand(0.0);
+  // 位置接口：停止时保持当前关节角不动
+  left_l1_joint_.setCommand(left_l1_joint_.getPosition());
+  left_l4_joint_.setCommand(left_l4_joint_.getPosition());
+  right_l1_joint_.setCommand(right_l1_joint_.getPosition());
+  right_l4_joint_.setCommand(right_l4_joint_.getPosition());
 }
 
 void BalanceController::imuCallback(const sensor_msgs::ImuConstPtr& msg) {

@@ -3,7 +3,6 @@
 #include <ros/ros.h>
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <control_toolbox/pid.h>
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Twist.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -42,19 +41,18 @@ private:
     double v_est_; // 估计的速度值
 };
 
-class BalanceController : public controller_interface::Controller<hardware_interface::EffortJointInterface>{
+class BalanceController : public controller_interface::Controller<hardware_interface::PositionJointInterface>{
 public:
   BalanceController() = default;
   ~BalanceController() = default;
 
-  bool init(hardware_interface::EffortJointInterface *effort_joint_interface,
+  bool init(hardware_interface::PositionJointInterface *pos_joint_interface,
             ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
   void update(const ros::Time& time, const ros::Duration& period) override;
   void starting(const ros::Time& time) override;
   void stopping(const ros::Time& time) override;
 
 private:
-  hardware_interface::JointHandle left_wheel_joint_, right_wheel_joint_, gimbal_pitch_joint_, gimbal_yaw_joint_;
   hardware_interface::JointHandle left_l4_joint_, right_l4_joint_, left_l1_joint_, right_l1_joint_;
   ros::Subscriber imu_sub_;
   ros::Subscriber gimbal_imu_sub_;
@@ -74,11 +72,6 @@ private:
   
   bool inverseKinematics(double cx, double cy, double &theta1, double &theta4);
   bool forwardKinematics(double theta1, double theta4, double &px, double &py);
-  control_toolbox::Pid yaw_pid_;
-  control_toolbox::Pid gimbal_pitch_pid_;
-  control_toolbox::Pid gimbal_yaw_pid_;
-  control_toolbox::Pid l1_pid_;   // hip joint 位置 PID
-  control_toolbox::Pid l4_pid_;   // linkage2 joint 位置 PID
   
   // 轨迹规划参数
   double traj_x_center_{0};      // 轨迹中心 x
