@@ -14,8 +14,20 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
     right_wheel_joint_ = effort_joint_interface->getHandle("right_wheel_joint");
     gimbal_pitch_joint_ = effort_joint_interface->getHandle("muzzle_joint");
     gimbal_yaw_joint_ = effort_joint_interface->getHandle("gimbal_joint");
+    left_l1_joint_ = effort_joint_interface->getHandle("left_hip_joint");
+    right_l1_joint_ = effort_joint_interface->getHandle("right_hip_joint");
+    left_l4_joint_ = effort_joint_interface->getHandle("left_linkage_2_joint");
+    right_l4_joint_ = effort_joint_interface->getHandle("right_linkage_2_joint");
   } catch (const hardware_interface::HardwareInterfaceException& e) {
     ROS_ERROR("Could not get joint handles: %s", e.what());
+    return false;
+  }
+  if (!controller_nh.getParam("l1", l1_) ||
+      !controller_nh.getParam("l2", l2_) ||
+      !controller_nh.getParam("l3", l3_) ||
+      !controller_nh.getParam("l4", l4_) ||
+      !controller_nh.getParam("l5", l5_)) {
+    ROS_ERROR("Failed to load link lengths from parameter server");
     return false;
   }
   if (!yaw_pid_.init(ros::NodeHandle(controller_nh, "yaw_pid"))) {
@@ -30,45 +42,15 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
     ROS_ERROR("Failed to initialize gimbal yaw PID");
     return false;
   }
+  if (!l1_pid_.init(ros::NodeHandle(controller_nh, "l1_pid"))) {
+    ROS_ERROR("Failed to initialize l1 PID");
+    return false;
+  }
+  if (!l4_pid_.init(ros::NodeHandle(controller_nh, "l4_pid"))) {
+    ROS_ERROR("Failed to initialize l4 PID");
+    return false;
+  }
   gimbal_imu_sub_ = root_nh.subscribe("gimbal_imu", 1, &BalanceController::gimbalImuCallback, this);
-  std::vector<double> q_list, r_list;
-  if (controller_nh.getParam("lqr/q", q_list)) {
-    if (q_list.size() == 16) {
-      Q_ = Eigen::Map<Eigen::Matrix<double, 4, 4, Eigen::RowMajor>>(q_list.data());
-    } else {
-      ROS_ERROR("Q list size should be 16");
-      return false;
-    }
-  }
-
-  // 读取 R 矩阵
-  if (controller_nh.getParam("lqr/r", r_list)) {
-    if (r_list.size() == 1) {
-      R_(0, 0) = r_list[0];
-    } else {
-      ROS_ERROR("R list size should be 1");
-      return false;
-    }
-  }
-  if (controller_nh.getParam("lqr/q_selfup", q_list)) {
-    if (q_list.size() == 16) {
-      Q_selfup_ = Eigen::Map<Eigen::Matrix<double, 4, 4, Eigen::RowMajor>>(q_list.data());
-    } else {
-      ROS_ERROR("Q list size should be 16");
-      return false;
-    }
-  }
-
-  // 读取 R 矩阵
-  if (controller_nh.getParam("lqr/r_selfup", r_list)) {
-    if (r_list.size() == 1) {
-      R_selfup_(0, 0) = r_list[0];
-    } else {
-      ROS_ERROR("R list size should be 1");
-      return false;
-    }
-  }
-
   controller_nh.param("wheel_separation", wheel_separation_, 0.2);
   controller_nh.param("wheel_radius", wheel_radius_, 0.03);
   pos_error_pub_ = root_nh.advertise<std_msgs::Float64>("position_error", 1);
@@ -77,34 +59,17 @@ bool BalanceController::init(hardware_interface::EffortJointInterface *effort_jo
   omega_error_pub_ = root_nh.advertise<std_msgs::Float64>("omega_error", 1);
   last_effort_pub_ = root_nh.advertise<std_msgs::Float64>("last_effort", 1);
 
+  controller_nh.param("traj_x_center",      traj_x_center_,     l5_ / 2.0);   // 基座中心
+  controller_nh.param("traj_y_center",      traj_y_center_,     0.22);        // 工作区中部
+  controller_nh.param("traj_x_amplitude",   traj_x_amplitude_,  0.03);
+  controller_nh.param("traj_y_amplitude",   traj_y_amplitude_,  0.02);
+  controller_nh.param("traj_frequency",     traj_frequency_,    0.5);         // 0.5 Hz
+  controller_nh.param("traj_sine_periods",  traj_sine_periods_, 2);           // 2个正弦半周期
+
+  start_time_ = ros::Time::now();
   imu_sub_ = root_nh.subscribe("imu", 1, &BalanceController::imuCallback, this);
   cmd_vel_sub_ = root_nh.subscribe("cmd_vel", 1, &BalanceController::cmdVelCallback, this);
 
-  A_ << 0.0, 1.0, 0.0, 0.0,
-        0.0, -5.42416193e-03, -8.32205709e-01, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-        0.0, -9.75084900e-03, 1.91311657e+01, 0.0;
-
-  B_ << 0.0,
-        2.71208097,
-        0.0,
-       -4.8754245;
-  Lqr<double> lqr(A_, B_, Q_, R_);
-  Lqr<double> lqr_selfup(A_, B_, Q_selfup_, R_selfup_);
-  if (lqr.computeK()) {
-    K_ = lqr.getK();
-    ROS_INFO_STREAM("LQR K: " << K_);
-  } else {
-    ROS_ERROR("Failed to compute LQR K");
-    return false;
-  }
-  if (lqr_selfup.computeK()) {
-    K_selfup_ = lqr_selfup.getK();
-    ROS_INFO_STREAM("LQR K Self-up: " << K_selfup_);
-  } else {
-    ROS_ERROR("Failed to compute LQR K selfup");
-    return false;
-  }
   return true;
 }
 
@@ -120,91 +85,127 @@ void BalanceController::starting(const ros::Time& time) {
 }
 
 void BalanceController::update(const ros::Time& time, const ros::Duration& period) {
-  double dt = period.toSec();
-  Vec4<double> x_error;
-  double current_raw_linear_vel_ = (left_wheel_joint_.getVelocity() + right_wheel_joint_.getVelocity()) * wheel_radius_ / 2.0;
-  current_linear_vel_ = vel_kf.update(current_raw_linear_vel_, dt, last_effort_);
+  // 1. 生成正弦轨迹目标末端点 (x, y)
+  double target_x, target_y;
+  sinusoidalTrajectory(time, target_x, target_y);
 
-  current_pos_ =(left_wheel_joint_.getPosition() + right_wheel_joint_.getPosition()) * wheel_radius_ / 2;
-  target_pos_ += target_linear_vel_ * dt;
-  
-  double pos_error = current_pos_ - target_pos_; 
-  double vel_error = current_linear_vel_ - target_linear_vel_;
-
-  double pitch_error = current_pitch_ - target_pitch_;
-  double omega_error = current_omega_ - target_omega_;
-  x_error << pos_error, vel_error, pitch_error, omega_error; 
-    
-  double gimbal_yaw_effort = gimbal_yaw_pid_.computeCommand(gimbal_target_angular_vel_ - gimbal_current_angular_vel_, period);
-  // to do 云台yaw追速度指令，底盘yaw追imu角度
-  gimbal_yaw_joint_.setCommand(gimbal_yaw_effort);
-  double yaw_effort = yaw_pid_.computeCommand(angularMinus(gimbal_current_yaw_, chassis_current_yaw_), period);
-
-  // 倒地状态机
-  switch (current_state_) {
-    case STATE_NORMAL:
-        if (std::abs(pitch_error) > 0.835) {
-            current_state_ = STATE_FALLEN;
-            ROS_INFO("Switched to FALLEN state");
-        }
-        break;
-
-    case STATE_FALLEN:
-        if (std::abs(omega_error) < 0.2 && std::abs(vel_error) < 0.01) {
-            current_state_ = STATE_SELF_UP;
-            self_up_start_time_ = time;
-            last_effort_ = 0.0;
-            ROS_INFO("Switched to SELF_UP state");
-        }
-        break;
-
-    case STATE_SELF_UP:
-        if ((time - self_up_start_time_).toSec() > 6.0) {
-            current_state_ = STATE_NORMAL;
-            ROS_INFO("Switched to NORMAL state");
-        }
-        break;
+  // 2. 逆运动学 → 目标关节角
+  double target_theta1, target_theta4;
+  if (!inverseKinematics(target_x, target_y, target_theta1, target_theta4)) {
+    ROS_WARN_THROTTLE(1.0, "IK failed for target (%.4f, %.4f), holding position",
+                     target_x, target_y);
+    return;
   }
 
-  double base_effort = 0;
-  if (current_state_ == STATE_SELF_UP) {
-    // base_effort = -(k1_selfup * pos_error + k2_selfup * vel_error + k3_selfup * pitch_error + k4_selfup * omega_error);
-    base_effort = -(K_selfup_ * x_error)(0, 0);
-    yaw_effort = 0; // 自起时不进行yaw控制
-  }
-  else if (current_state_ == STATE_NORMAL) {
-    // base_effort = -(k1 * pos_error + k2 * vel_error + k3 * pitch_error + k4 * omega_error);
-    base_effort = -(K_ * x_error)(0, 0);
-  }
-  else {
-      base_effort = 0;
-      yaw_effort = 0;
-  }
+  // 3. 读取当前各关节实际角度
+  double cur_l1_left  = left_l1_joint_.getPosition();
+  double cur_l4_left  = left_l4_joint_.getPosition();
+  double cur_l1_right = right_l1_joint_.getPosition();
+  double cur_l4_right = right_l4_joint_.getPosition();
 
-  left_wheel_joint_.setCommand(base_effort / 2 - yaw_effort);
-  right_wheel_joint_.setCommand(base_effort / 2 + yaw_effort);
-  // 倒地时候可以清空这个转向pid的输出
-  last_effort_ = base_effort;
+  // 4. 计算位置误差并通过 PID 输出力矩
+  double err_l1_left  = target_theta1 - cur_l1_left;
+  double err_l4_left  = target_theta4 - cur_l4_left;
+  double err_l1_right = target_theta1 - cur_l1_right;
+  double err_l4_right = target_theta4 - cur_l4_right;
 
-  double gimbal_pitch_error = gimbal_target_pitch_ - gimbal_current_pitch_;
-  gimbal_pitch_joint_.setCommand(gimbal_pitch_pid_.computeCommand(gimbal_pitch_error, period));
+  left_l1_joint_.setCommand(l1_pid_.computeCommand(err_l1_left,  period));
+  left_l4_joint_.setCommand(l4_pid_.computeCommand(err_l4_left,  period));
+  right_l1_joint_.setCommand(l1_pid_.computeCommand(err_l1_right, period));
+  right_l4_joint_.setCommand(l4_pid_.computeCommand(err_l4_right, period));
 
-  // 发布误差信息
-  std_msgs::Float64 pos_error_msg;
-  pos_error_msg.data = pos_error;
-  pos_error_pub_.publish(pos_error_msg);
-  std_msgs::Float64 vel_error_msg;
-  vel_error_msg.data = vel_error;
-  vel_error_pub_.publish(vel_error_msg);
-  std_msgs::Float64 pitch_error_msg;
-  pitch_error_msg.data = pitch_error;
-  pitch_error_pub_.publish(pitch_error_msg);
-  std_msgs::Float64 omega_error_msg;
-  omega_error_msg.data = omega_error;
-  omega_error_pub_.publish(omega_error_msg);
-  std_msgs::Float64 last_effort_msg;
-  last_effort_msg.data = last_effort_;
-  last_effort_pub_.publish(last_effort_msg);
+  // 5. 正解验证：计算实际末端位置（用于调试/发布）
+  double fk_x, fk_y;
+  if (forwardKinematics(cur_l1_left, cur_l4_left, fk_x, fk_y)) {
+    ROS_DEBUG_THROTTLE(0.5,
+      "Traj target=(%.4f,%.4f) | FK actual=(%.4f,%.4f) | theta1_err=%.4f theta4_err=%.4f",
+      target_x, target_y, fk_x, fk_y, err_l1_left, err_l4_left);
+  }
+}
+
+bool BalanceController::inverseKinematics(double cx, double cy,
+                                              double &theta1, double &theta4) {
+  double dist_sq_ac = cx * cx + cy * cy;
+  double dist_ac    = sqrt(dist_sq_ac);
+  if (dist_ac < 1e-10) {
+    ROS_WARN("IK: target too close to joint A");
+    return false;
+  }
+  double cos_alpha = (l1_ * l1_ + dist_sq_ac - l2_ * l2_) / (2.0 * l1_ * dist_ac);
+  if (cos_alpha < -1.001 || cos_alpha > 1.001) {
+    ROS_WARN("IK: left chain unreachable (cos_alpha=%.4f)", cos_alpha);
+    return false;
+  }
+  cos_alpha = std::max(-1.0, std::min(1.0, cos_alpha));
+  double gamma_l  = atan2(cy, cx);
+  double alpha_l  = acos(cos_alpha);
+  double phi1     = gamma_l + alpha_l;
+  double dx_ec    = cx - l5_;
+  double dy_ec    = cy; 
+  double dist_sq_ec = dx_ec * dx_ec + dy_ec * dy_ec;
+  double dist_ec    = sqrt(dist_sq_ec);
+  if (dist_ec < 1e-10) {
+    ROS_WARN("IK: target too close to joint E");
+    return false;
+  }
+  double cos_beta = (l4_ * l4_ + dist_sq_ec - l3_ * l3_) / (2.0 * l4_ * dist_ec);
+  if (cos_beta < -1.001 || cos_beta > 1.001) {
+    ROS_WARN("IK: right chain unreachable (cos_beta=%.4f)", cos_beta);
+    return false;
+  }
+  cos_beta = std::max(-1.0, std::min(1.0, cos_beta));
+  double gamma_r  = atan2(dy_ec, dx_ec);
+  double alpha_r  = acos(cos_beta);
+  double phi4     = gamma_r - alpha_r;
+
+  theta1 = phi1 - M_PI;
+  theta4 = phi4 - M_PI / 2;
+
+  return true;
+}
+
+bool BalanceController::forwardKinematics(double theta1, double theta4,
+                                              double &px, double &py) {
+
+  double phi1 = theta1 + M_PI;
+  double phi4 = theta4 + M_PI / 2;
+  double bx = l1_ * cos(phi1);
+  double by = l1_ * sin(phi1);
+  double dx_elbow = l5_ + l4_ * cos(phi4); 
+  double dy_elbow = l4_ * sin(phi4);
+  double dist_x = dx_elbow - bx;
+  double dist_y = dy_elbow - by;
+  double d      = sqrt(dist_x * dist_x + dist_y * dist_y);
+
+  if (d > l2_ + l3_ + 1e-6 || d < fabs(l2_ - l3_) - 1e-6 || d < 1e-10) {
+    ROS_WARN("FK: no solution (d=%.4f, valid=[%.4f, %.4f])",
+             d, fabs(l2_ - l3_), l2_ + l3_);
+    return false;
+  }
+  double a    = (l2_ * l2_ - l3_ * l3_ + d * d) / (2.0 * d);
+  double h_sq = l2_ * l2_ - a * a;
+  if (h_sq < 0.0) h_sq = 0.0;
+  double h = sqrt(h_sq);
+  double mx = bx + a * dist_x / d;
+  double my = by + a * dist_y / d;
+  double c1x = mx + h * (-dist_y) / d;
+  double c1y = my + h * (dist_x)  / d;
+  double c2x = mx - h * (-dist_y) / d;
+  double c2y = my - h * (dist_x)  / d;
+
+  if (c1y >= c2y) { px = c1x; py = c1y; }
+  else            { px = c2x; py = c2y; }
+
+  return true;
+}
+
+void BalanceController::sinusoidalTrajectory(const ros::Time &time,
+                                                  double &target_x, double &target_y) {
+  double elapsed = (time - start_time_).toSec();
+  double phase = elapsed * traj_frequency_;
+  double s = 2.0 * fabs(fmod(fabs(phase), 2.0) - 1.0) - 1.0;
+  target_x = traj_x_center_ + traj_x_amplitude_ * s;
+  target_y = traj_y_center_ + traj_y_amplitude_ * sin(traj_sine_periods_ * M_PI * s);
 }
 
 void BalanceController::stopping(const ros::Time& time) {

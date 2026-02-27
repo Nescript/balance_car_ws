@@ -48,26 +48,39 @@ balance_controller:
   k3: -41.7910 
   k4: -7.7452
 
+  l1: 0.15
+  l2: 0.07
+  l3: 0.15
+  l4: 0.07
+  l5: 0.0
+
+  # 腿部关节位置 PID（输入：angle error rad，输出：effort Nm）
+  l1_pid:
+    p: 5.0
+    i: 0.0
+    d: 0.5
+    i_clamp: 2.0
+
+  l4_pid:
+    p: 5.0
+    i: 0.0
+    d: 0.5
+    i_clamp: 2.0
+
+  # 正弦轨迹参数
+  # IK 坐标系以 hip_joint 为原点，y 轴向下为负
+  # 可达范围：|l1-l2|=0.08 m  ~  l1+l2=0.22 m
+  traj_x_center:     0.0     # x 方向中心 (m)
+  traj_y_center:    -0.17    # y 方向中心 (m)，hip 正下方 17 cm，处于可达区中部
+  traj_x_amplitude:  0.02    # x 振幅 (m)，±2 cm
+  traj_y_amplitude:  0.02    # y 振幅 (m)，±2 cm
+  traj_frequency:    0.3     # 频率 (Hz)，较慢便于 PID 跟踪
+  traj_sine_periods: 2       # y 方向正弦半周期数
+
   k1_selfup: -2.2361
   k2_selfup: -2.7418
   k3_selfup: -17.9637 
   k4_selfup: -4.3165
-  lqr:
-    q_selfup: [1.0, 0.0, 0.0, 0.0,
-               0.0, 0.16, 0.0, 0.0,
-               0.0, 0.0, 1.3759, 0.0,
-               0.0, 0.0, 0.0, 2.0]
-    r_selfup: [0.11]
-#    q: [1.0, 0.0, 0.0, 0.0,
-#               0.0, 0.16, 0.0, 0.0,
-#               0.0, 0.0, 1.3759, 0.0,
-#               0.0, 0.0, 0.0, 2.0]
-#    r: [0.11]
-    q: [1, 0.0, 0.0, 0.0,
-        0.0, 0.16, 0.0, 0.0,
-        0.0, 0.0, 3.3759, 0.0,
-        0.0, 0.0, 0.0, 2.0]
-    r: [0.11]
 # 同时也需要配置 joint_state_controller
 joint_state_controller:
   type: "joint_state_controller/JointStateController"

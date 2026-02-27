@@ -11,7 +11,6 @@
 #include <nav_msgs/Odometry.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <std_msgs/Float64.h>
-#include "balance_controller/lqr.h"
 #include "balance_controller/eigen_types.h"
 
 
@@ -56,6 +55,7 @@ public:
 
 private:
   hardware_interface::JointHandle left_wheel_joint_, right_wheel_joint_, gimbal_pitch_joint_, gimbal_yaw_joint_;
+  hardware_interface::JointHandle left_l4_joint_, right_l4_joint_, left_l1_joint_, right_l1_joint_;
   ros::Subscriber imu_sub_;
   ros::Subscriber gimbal_imu_sub_;
   ros::Subscriber cmd_vel_sub_;
@@ -65,22 +65,30 @@ private:
   ros::Publisher omega_error_pub_;
   ros::Publisher last_effort_pub_;
 
+  ros::Time start_time_;
+
   void imuCallback(const sensor_msgs::ImuConstPtr& msg);
   void gimbalImuCallback(const sensor_msgs::ImuConstPtr& msg);
   void cmdVelCallback(const geometry_msgs::TwistConstPtr& msg);
-
+  void sinusoidalTrajectory(const ros::Time &time, double &target_x, double &target_y);
+  
+  bool inverseKinematics(double cx, double cy, double &theta1, double &theta4);
+  bool forwardKinematics(double theta1, double theta4, double &px, double &py);
   control_toolbox::Pid yaw_pid_;
   control_toolbox::Pid gimbal_pitch_pid_;
   control_toolbox::Pid gimbal_yaw_pid_;
+  control_toolbox::Pid l1_pid_;   // hip joint 位置 PID
+  control_toolbox::Pid l4_pid_;   // linkage2 joint 位置 PID
   
-  Mat4<double> A_;
-  Vec4<double> B_;
-  Mat4<double> Q_;
-  Eigen::Matrix<double, 1, 1> R_;
-  Mat4<double> Q_selfup_;
-  Eigen::Matrix<double, 1, 1> R_selfup_;
-  Eigen::MatrixXd K_;
-  Eigen::MatrixXd K_selfup_;
+  // 轨迹规划参数
+  double traj_x_center_{0};      // 轨迹中心 x
+  double traj_y_center_{0};      // 轨迹中心 y
+  double traj_x_amplitude_{0};   // x 方向振幅
+  double traj_y_amplitude_{0};   // y 方向振幅
+  double traj_frequency_{0};     // 运动频率 (Hz)
+  int    traj_sine_periods_{0};  // y 方向正弦半周期数
+
+  double l1_{0}, l2_{0}, l3_{0}, l4_{0}, l5_{0};
   double current_pitch_ = 0.0; // 当前角度
   double current_pos_ = 0.0; // 当前位移
   double current_linear_vel_ = 0.0; // 当前速度

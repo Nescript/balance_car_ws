@@ -1,0 +1,133 @@
+# 五连杆运动学完整符号表
+
+## 几何结构
+
+```
+        y
+        ↑
+        |      C (末端/足端)
+        |     / \
+        |  l2/   \l3
+        |   /     \
+        |  B       D
+        |  |       |
+        |l1|       |l4
+        |  |       |
+        |  A───────E──→ x
+        | (0,0)  (l5,0)
+```
+
+---
+
+## 一、点坐标
+
+| 符号 | 含义 | 坐标 | 备注 |
+|------|------|------|------|
+| $A$ | 左电机 | $(0,\ 0)$ | 坐标原点 |
+| $E$ | 右电机 | $(l_5,\ 0)$ | x轴上固定点 |
+| $B$ | 左肘关节 | $(l_1\cos\phi_1,\ l_1\sin\phi_1)$ | 随$\phi_1$变化 |
+| $D$ | 右肘关节 | $(l_5+l_4\cos\phi_4,\ l_4\sin\phi_4)$ | 随$\phi_4$变化 |
+| $C$ | 末端（足端） | $(x_c,\ y_c)$ | 待求/控制目标 |
+| $M$ | $BD$连心线垂足 | $(m_x,\ m_y)$ | 正解中间变量 |
+
+---
+
+## 二、杆长
+
+| 符号 | 含义 | 对应代码变量 | 典型值(m) |
+|------|------|-------------|----------|
+| $l_1$ | 左曲柄 $A \to B$ | `l1_` | 0.14 |
+| $l_2$ | 左连杆 $B \to C$ | `l2_` | 0.25 |
+| $l_3$ | 右连杆 $D \to C$ | `l3_` | 0.25 |
+| $l_4$ | 右曲柄 $E \to D$ | `l4_` | 0.14 |
+| $l_5$ | 电机间距 $A \to E$ | `l5_` | 0.12 |
+| $l_{BD}$ | 肘关节间距 | `l_BD` | 随姿态变化 |
+
+---
+
+## 三、角度
+
+### 3.1 运动学角度（公式推导使用）
+
+> **统一约定**：所有角度以 **x轴正方向为零位**，**逆时针为正**
+
+| 符号 | 含义 | 类型 | 正常工作范围 |
+|------|------|------|-------------|
+| $\phi_1$ | 左曲柄 $A\to B$ 与x轴夹角 | **驱动角（输入）** | $(0°,\ 180°)$ |
+| $\phi_4$ | 右曲柄 $E\to D$ 与x轴夹角 | **驱动角（输入）** | $(0°,\ 180°)$ |
+| $\phi_2$ | 左连杆 $B\to C$ 与x轴夹角 | 从动角（约束决定） | $(0°,\ 180°)$ |
+| $\phi_3$ | 右连杆 $D\to C$ 与x轴夹角 | 从动角（约束决定） | $(0°,\ 180°)$ |
+
+### 3.2 URDF关节角度（ros_control使用）
+
+| 符号 | 含义 | 对应代码变量 | 与运动学角关系 |
+|------|------|-------------|--------------|
+| $\theta_1$ | `link1_joint` 关节角 | `theta1` | $\phi_1 = \theta_1 + \pi$ |
+| $\theta_4$ | `link4_joint` 关节角 | `theta4` | $\phi_4 = \theta_4$ |
+
+### 3.3 逆解中间角度（几何法）
+
+| 符号 | 含义 | 计算公式 |
+|------|------|---------|
+| $\gamma_L$ | $\overrightarrow{AC}$ 极角 | $\text{atan2}(y_c,\ x_c)$ |
+| $\alpha_L$ | $\angle BAC$（余弦定理） | $\arccos\!\left(\dfrac{l_1^2+\|AC\|^2-l_2^2}{2l_1\|AC\|}\right)$ |
+| $\gamma_R$ | $\overrightarrow{EC}$ 极角 | $\text{atan2}(y_c,\ x_c-l_5)$ |
+| $\alpha_R$ | $\angle CED$（余弦定理） | $\arccos\!\left(\dfrac{l_4^2+\|EC\|^2-l_3^2}{2l_4\|EC\|}\right)$ |
+
+---
+
+## 四、约束方程
+
+$$\boldsymbol{f} = \begin{bmatrix} f_x \\ f_y \end{bmatrix} = \begin{bmatrix} l_1\cos\phi_1 + l_2\cos\phi_2 - l_5 - l_4\cos\phi_4 - l_3\cos\phi_3 \\ l_1\sin\phi_1 + l_2\sin\phi_2 - l_4\sin\phi_4 - l_3\sin\phi_3 \end{bmatrix} = \boldsymbol{0}$$
+
+---
+
+## 五、雅可比与VMC
+
+| 符号 | 含义 | 维度 | 计算方式 |
+|------|------|------|---------|
+| $J$ | 末端雅可比矩阵 | $2\times2$ | $J = \frac{\partial C}{\partial q} + \frac{\partial C}{\partial \boldsymbol{\theta}}\frac{d\boldsymbol{\theta}}{d\boldsymbol{q}}$ |
+| $\frac{\partial \boldsymbol{f}}{\partial \boldsymbol{q}}$ | 约束对驱动角偏导 | $2\times2$ | `fq = jacobian(f, [phi1;phi4])` |
+| $\frac{\partial \boldsymbol{f}}{\partial \boldsymbol{\theta}}$ | 约束对从动角偏导 | $2\times2$ | `fth = jacobian(f, [phi2;phi3])` |
+| $\boldsymbol{q}$ | 驱动角向量 | $2\times1$ | $[\phi_1,\ \phi_4]^T$ |
+| $\boldsymbol{\theta}$ | 从动角向量 | $2\times1$ | $[\phi_2,\ \phi_3]^T$ |
+| $\boldsymbol{F}$ | 末端广义力 | $2\times1$ | $[F_x,\ F_y]^T$，x右y上为正 |
+| $\boldsymbol{\tau}$ | 关节力矩向量 | $2\times1$ | $[\tau_1,\ \tau_4]^T$，逆时针为正 |
+
+$$\boldsymbol{\tau} = J^T \boldsymbol{F}$$
+
+**奇异判据**：
+
+$$\det\!\left(\frac{\partial \boldsymbol{f}}{\partial \boldsymbol{\theta}}\right) = l_2 l_3 \sin(\phi_2 - \phi_3) = 0$$
+
+即 $\phi_2 = \phi_3$（两连杆平行）时机构奇异。
+
+---
+
+## 六、虚拟腿参数
+
+| 符号 | 含义 | 计算公式 | 对应代码变量 |
+|------|------|---------|-------------|
+| $L$ | 虚拟腿长 | $\sqrt{x_c^2 + y_c^2}$ | `L` |
+| $\psi$ | 虚拟腿倾角（与y轴夹角） | $\text{atan2}(x_c,\ y_c)$ | `psi` |
+
+---
+
+## 七、符号关系速查
+
+```
+URDF角          运动学角         几何意义
+────────────    ────────────    ──────────────────
+theta1          phi1 = theta1+π  左曲柄与x轴夹角
+theta4          phi4 = theta4    右曲柄与x轴夹角
+                phi2             左连杆与x轴夹角（从动）
+                phi3             右连杆与x轴夹角（从动）
+
+驱动角向量 q = [phi1, phi4]ᵀ
+从动角向量 θ = [phi2, phi3]ᵀ
+末端坐标   C = (xc, yc)
+虚拟腿     (L, ψ)
+
+力映射：τ = Jᵀ F
+  F: 末端力，x右y上为正
+  τ: 关节力矩，逆时针为正
